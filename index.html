@@ -30,7 +30,9 @@ body{background:#f8f9fa}
 .weight-input:focus,.diet-input:focus{outline:none;border-color:#e91e63}
 .timeline-dot{width:12px;height:12px;border-radius:50%;position:absolute;left:-22px;top:6px}
 .timeline-line{position:absolute;left:-17px;top:18px;bottom:-8px;width:2px}
+#checkup,#nutrition,#recipe,#weight,#notes{scroll-margin-top:12px}
 </style>
+<base target="_blank">
 </head>
 <body class="pb-20">
 
@@ -39,7 +41,7 @@ body{background:#f8f9fa}
   <div class="absolute top-0 right-0 opacity-20"><i class="fas fa-baby text-9xl text-white transform rotate-12 translate-x-4 -translate-y-4"></i></div>
   <div class="relative z-10">
     <div class="flex justify-between items-center mb-4">
-      <div><p class="text-white/80 text-sm">今天是</p><p class="text-white text-lg font-semibold" id="todayDate">--</p></div>
+      <div><p class="text-white/80 text-sm">今天是</p><p class="text-white text-lg font-semibold" id="todayDate">--</p><p class="text-white/90 text-sm font-semibold tracking-wide mt-0.5"><i class="fas fa-clock mr-1"></i><span id="todayTime">--:--</span></p></div>
       <div class="glass rounded-full px-3 py-1"><span class="text-pink-600 text-xs font-medium" id="pregnancyPhase"><i class="fas fa-heart mr-1"></i>--</span></div>
     </div>
     <div class="flex items-center justify-center mb-4">
@@ -58,6 +60,16 @@ body{background:#f8f9fa}
   <div class="glass card-shadow rounded-2xl p-4 border-l-4 border-pink-400">
     <div class="flex justify-between items-start mb-3"><h3 class="font-bold text-gray-800"><i class="fas fa-file-medical-alt text-pink-500 mr-2"></i>检验报告解读</h3><span class="text-xs text-gray-400" id="latestReportDate">--</span></div>
     <div id="reportCompare"></div>
+    <div class="mt-3 border-t border-pink-100 pt-3">
+      <div class="flex justify-between items-center mb-2"><h4 class="text-sm font-bold text-gray-700"><i class="fas fa-history text-pink-400 mr-1"></i>历史检验报告</h4><button onclick="toggleReportForm()" class="text-xs bg-pink-500 text-white px-3 py-1 rounded-full active:scale-95 transition-transform"><i class="fas fa-plus mr-1"></i>添加报告</button></div>
+      <div id="reportForm" class="hidden bg-pink-50 rounded-xl p-3 mb-2 border border-pink-100">
+        <div class="mb-2"><label class="text-xs text-gray-500 block mb-1">检查日期</label><input type="date" id="reportDateInput" class="weight-input w-full border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white transition-all"></div>
+        <div class="flex space-x-2 mb-2"><div class="flex-1"><label class="text-xs text-gray-500 block mb-1">孕酮 (ng/mL)</label><input type="number" id="reportProgInput" step="0.01" placeholder="如 14.03" class="weight-input w-full border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white transition-all"></div><div class="flex-1"><label class="text-xs text-gray-500 block mb-1">HCG (mIU/mL)</label><input type="number" id="reportHcgInput" step="0.01" placeholder="如 850.07" class="weight-input w-full border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white transition-all"></div></div>
+        <div class="mb-2"><label class="text-xs text-gray-500 block mb-1">医生提示（可选）</label><input type="text" id="reportTipInput" placeholder="如：1周后复查HCG翻倍情况" class="diet-input w-full border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white transition-all"></div>
+        <button onclick="addReport()" class="w-full bg-pink-500 text-white py-2 rounded-xl text-sm font-medium active:scale-95 transition-transform"><i class="fas fa-save mr-1"></i>保存报告</button>
+      </div>
+      <div class="space-y-2 max-h-48 overflow-y-auto hide-scrollbar" id="reportHistory"></div>
+    </div>
     <div class="bg-amber-50 rounded-xl p-3 border border-amber-200 mt-3"><p class="text-xs text-amber-800" id="reportTip"><i class="fas fa-exclamation-triangle mr-1"></i><strong>温馨提示：</strong>--</p></div>
   </div>
 </div>
@@ -65,19 +77,21 @@ body{background:#f8f9fa}
 <!-- 快捷入口 -->
 <div class="px-4 mt-4">
   <div class="grid grid-cols-4 gap-3">
-    <div class="flex flex-col items-center" onclick="scrollTo('checkup')"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-100 to-pink-100 flex items-center justify-center card-shadow mb-1"><i class="fas fa-hospital text-xl text-teal-600"></i></div><span class="text-xs text-gray-600">产检提醒</span></div>
-    <div class="flex flex-col items-center" onclick="scrollTo('nutrition')"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-yellow-100 flex items-center justify-center card-shadow mb-1"><i class="fas fa-apple-alt text-xl text-orange-600"></i></div><span class="text-xs text-gray-600">营养补充</span></div>
-    <div class="flex flex-col items-center" onclick="scrollTo('recipe')"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center card-shadow mb-1"><i class="fas fa-utensils text-xl text-amber-600"></i></div><span class="text-xs text-gray-600">每日食谱</span></div>
-    <div class="flex flex-col items-center" onclick="scrollTo('weight')"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center card-shadow mb-1"><i class="fas fa-weight text-xl text-indigo-600"></i></div><span class="text-xs text-gray-600">体重记录</span></div>
+    <div class="flex flex-col items-center" onclick="jumpTo('checkup')"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-100 to-pink-100 flex items-center justify-center card-shadow mb-1"><i class="fas fa-hospital text-xl text-teal-600"></i></div><span class="text-xs text-gray-600">产检提醒</span></div>
+    <div class="flex flex-col items-center" onclick="jumpTo('nutrition')"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-yellow-100 flex items-center justify-center card-shadow mb-1"><i class="fas fa-apple-alt text-xl text-orange-600"></i></div><span class="text-xs text-gray-600">营养补充</span></div>
+    <div class="flex flex-col items-center" onclick="jumpTo('recipe')"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center card-shadow mb-1"><i class="fas fa-utensils text-xl text-amber-600"></i></div><span class="text-xs text-gray-600">每日食谱</span></div>
+    <div class="flex flex-col items-center" onclick="jumpTo('weight')"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center card-shadow mb-1"><i class="fas fa-weight text-xl text-indigo-600"></i></div><span class="text-xs text-gray-600">体重记录</span></div>
   </div>
 </div>
 
 <!-- 今日待办 -->
 <div class="px-4 mt-5">
-  <div class="flex justify-between items-center mb-3"><h2 class="font-bold text-gray-800 text-lg">今日待办</h2><span class="text-xs text-pink-500" id="todoProgress">0/3 完成</span></div>
+  <div class="flex justify-between items-center mb-3"><h2 class="font-bold text-gray-800 text-lg">今日待办</h2><span class="text-xs text-pink-500" id="todoProgress">0/5 完成</span></div>
   <div class="space-y-2" id="todoList">
+    <div class="check-item bg-white rounded-xl p-3 card-shadow border border-gray-100 flex items-center" onclick="toggleCheck(this)"><div class="w-5 h-5 rounded border-2 border-gray-300 mr-3 flex items-center justify-center check-box transition-all"><i class="fas fa-check text-white text-xs hidden"></i></div><div class="flex-1"><p class="check-text text-sm text-gray-700">服用优甲乐 (遵医嘱)</p><p class="text-xs text-gray-400">每日一次，早餐前30-60分钟空腹服用</p></div><span class="bg-gradient-to-r from-red-400 to-pink-400 text-white text-xs px-2 py-0.5 rounded-full">医嘱</span></div>
     <div class="check-item bg-white rounded-xl p-3 card-shadow border border-gray-100 flex items-center" onclick="toggleCheck(this)"><div class="w-5 h-5 rounded border-2 border-gray-300 mr-3 flex items-center justify-center check-box transition-all"><i class="fas fa-check text-white text-xs hidden"></i></div><div class="flex-1"><p class="check-text text-sm text-gray-700">服用叶酸 (0.4mg)</p><p class="text-xs text-gray-400">每日一次，早餐后</p></div><span class="bg-gradient-to-r from-green-400 to-teal-400 text-white text-xs px-2 py-0.5 rounded-full">重要</span></div>
     <div class="check-item bg-white rounded-xl p-3 card-shadow border border-gray-100 flex items-center" onclick="toggleCheck(this)"><div class="w-5 h-5 rounded border-2 border-gray-300 mr-3 flex items-center justify-center check-box transition-all"><i class="fas fa-check text-white text-xs hidden"></i></div><div class="flex-1"><p class="check-text text-sm text-gray-700">补充黄体酮 (遵医嘱)</p><p class="text-xs text-gray-400">根据检验报告建议</p></div><span class="bg-gradient-to-r from-red-400 to-pink-400 text-white text-xs px-2 py-0.5 rounded-full">医嘱</span></div>
+    <div class="check-item bg-white rounded-xl p-3 card-shadow border border-gray-100 flex items-center" onclick="toggleCheck(this)"><div class="w-5 h-5 rounded border-2 border-gray-300 mr-3 flex items-center justify-center check-box transition-all"><i class="fas fa-check text-white text-xs hidden"></i></div><div class="flex-1"><p class="check-text text-sm text-gray-700">补充维生素D3</p><p class="text-xs text-gray-400">每日一次，随餐服用促进钙吸收</p></div><span class="bg-gradient-to-r from-green-400 to-teal-400 text-white text-xs px-2 py-0.5 rounded-full">重要</span></div>
     <div class="check-item bg-white rounded-xl p-3 card-shadow border border-gray-100 flex items-center" onclick="toggleCheck(this)"><div class="w-5 h-5 rounded border-2 border-gray-300 mr-3 flex items-center justify-center check-box transition-all"><i class="fas fa-check text-white text-xs hidden"></i></div><div class="flex-1"><p class="check-text text-sm text-gray-700">多喝水 (2000ml)</p><p class="text-xs text-gray-400">保持身体水分充足</p></div><span class="bg-gradient-to-r from-teal-400 to-blue-400 text-white text-xs px-2 py-0.5 rounded-full">日常</span></div>
   </div>
 </div>
@@ -87,7 +101,7 @@ body{background:#f8f9fa}
   <div class="flex justify-between items-center mb-3"><h2 class="font-bold text-gray-800 text-lg"><i class="fas fa-hospital text-pink-500 mr-2"></i>产检时间表</h2><span class="text-xs bg-pink-100 text-pink-600 px-2 py-1 rounded-full">共11次</span></div>
   <div class="bg-white rounded-2xl card-shadow p-4">
     <div class="relative pl-6 space-y-4">
-      <div class="relative"><div class="timeline-dot bg-pink-500 border-2 border-white"></div><div class="timeline-line bg-pink-200"></div><div class="bg-pink-50 rounded-xl p-3 border border-pink-100"><div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-800">✅ 确认怀孕（已做）</span><span class="text-xs text-gray-500">孕4周</span></div><p class="text-xs text-gray-600 mt-1">抽血查HCG、孕酮 — 2026年8月21日</p></div></div>
+      <div class="relative"><div class="timeline-dot bg-pink-500 border-2 border-white"></div><div class="timeline-line bg-pink-200"></div><div class="bg-pink-50 rounded-xl p-3 border border-pink-100"><div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-800">✅ 确认怀孕（已做）</span><span class="text-xs text-gray-500">孕4周</span></div><p class="text-xs text-gray-600 mt-1">抽血查HCG、孕酮 — 2026年8月15日</p></div></div>
       <div class="relative"><div class="timeline-dot bg-white border-2 border-pink-500 animate-pulse"></div><div class="timeline-line bg-gray-200"></div><div class="bg-white rounded-xl p-3 border-2 border-pink-300"><div class="flex justify-between items-center"><span class="font-bold text-sm text-pink-700">📅 第一次B超（即将）</span><span class="text-xs bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full">孕6-8周</span></div><p class="text-xs text-gray-600 mt-1"><strong>确认宫内孕、排除宫外孕</strong>，查看胎心胎芽</p><p class="text-xs text-red-500 mt-1"><i class="fas fa-heartbeat mr-1"></i>如腹痛/出血需提前检查，排除宫外孕风险</p><p class="text-xs text-amber-600 mt-1"><i class="fas fa-clock mr-1"></i>2026年9月1日 — 9月15日</p></div></div>
       <div class="relative"><div class="timeline-dot bg-gray-200 border-2 border-white"></div><div class="timeline-line bg-gray-200"></div><div class="bg-gray-50 rounded-xl p-3"><div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-700">NT检查 + 建档</span><span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕11-13周</span></div><p class="text-xs text-gray-500 mt-1">颈部透明层厚度检查，建立孕期档案</p><p class="text-xs text-gray-400 mt-0.5">2026年9月22日 — 10月6日</p></div></div>
       <div class="relative"><div class="timeline-dot bg-gray-200 border-2 border-white"></div><div class="timeline-line bg-gray-200"></div><div class="bg-gray-50 rounded-xl p-3"><div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-700">唐氏筛查 / 无创DNA</span><span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕15-20周</span></div><p class="text-xs text-gray-500 mt-1">排查染色体异常风险</p><p class="text-xs text-gray-400 mt-0.5">2026年10月20日 — 11月24日</p></div></div>
@@ -160,10 +174,10 @@ body{background:#f8f9fa}
 <!-- 底部导航 -->
 <div class="fixed bottom-0 left-0 right-0 glass border-t border-gray-200 z-50">
   <div class="flex justify-around py-2">
-    <button class="nav-btn flex flex-col items-center py-1 px-4 text-pink-600 border-b-2 border-pink-600" onclick="scrollTo('top')"><i class="fas fa-home text-lg"></i><span class="text-xs mt-0.5">首页</span></button>
-    <button class="nav-btn flex flex-col items-center py-1 px-4 text-gray-400" onclick="scrollTo('checkup')"><i class="fas fa-calendar-check text-lg"></i><span class="text-xs mt-0.5">产检</span></button>
-    <button class="nav-btn flex flex-col items-center py-1 px-4 text-gray-400" onclick="scrollTo('nutrition')"><i class="fas fa-carrot text-lg"></i><span class="text-xs mt-0.5">营养</span></button>
-    <button class="nav-btn flex flex-col items-center py-1 px-4 text-gray-400" onclick="scrollTo('notes')"><i class="fas fa-book-medical text-lg"></i><span class="text-xs mt-0.5">须知</span></button>
+    <button class="nav-btn flex flex-col items-center py-1 px-4 text-pink-600 border-b-2 border-pink-600" onclick="jumpTo('top')"><i class="fas fa-home text-lg"></i><span class="text-xs mt-0.5">首页</span></button>
+    <button class="nav-btn flex flex-col items-center py-1 px-4 text-gray-400" onclick="jumpTo('checkup')"><i class="fas fa-calendar-check text-lg"></i><span class="text-xs mt-0.5">产检</span></button>
+    <button class="nav-btn flex flex-col items-center py-1 px-4 text-gray-400" onclick="jumpTo('nutrition')"><i class="fas fa-carrot text-lg"></i><span class="text-xs mt-0.5">营养</span></button>
+    <button class="nav-btn flex flex-col items-center py-1 px-4 text-gray-400" onclick="jumpTo('notes')"><i class="fas fa-book-medical text-lg"></i><span class="text-xs mt-0.5">须知</span></button>
   </div>
 </div>
 
@@ -175,8 +189,14 @@ function updateBabySize(w){const s=[{w:4,e:'🫘',n:'小芝麻籽',l:'身长约 
 
 function getReports(){try{return JSON.parse(localStorage.getItem(REPORT_KEY))||[]}catch(e){return[]}}
 function saveReports(r){localStorage.setItem(REPORT_KEY,JSON.stringify(r))}
-function initReports(){let r=getReports();if(!r.length){r=[{date:'2026-08-21',progesterone:14.03,hcg:850.07,tip:'孕酮值在正常范围内但偏低，建议遵医嘱补充黄体酮，1周后复查HCG翻倍情况和孕酮水平。'}];saveReports(r)}return r}
-function renderReports(){const r=initReports(),c=document.getElementById('reportCompare');if(!r.length){c.innerHTML='<p class="text-xs text-gray-400">暂无报告记录</p>';return}const l=r[r.length-1];document.getElementById('latestReportDate').textContent=l.date;document.getElementById('reportTip').innerHTML='<i class="fas fa-exclamation-triangle mr-1"></i><strong>温馨提示：</strong>'+l.tip;let h='<div class="grid grid-cols-2 gap-3">';h+='<div class="bg-pink-50 rounded-xl p-3"><p class="text-xs text-gray-500">孕酮</p><p class="text-lg font-bold text-gray-800">'+l.progesterone+' <span class="text-xs font-normal">ng/mL</span></p>';if(r.length>=2){const p=r[r.length-2],d=(l.progesterone-p.progesterone).toFixed(2),cl=d>=0?'text-green-600':'text-red-500',ar=d>=0?'↑':'↓';h+='<p class="text-xs '+cl+'">上一次 '+p.progesterone+' '+ar+' '+Math.abs(d)+'</p>'}else h+='<span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">正常偏低</span>';h+='</div>';h+='<div class="bg-pink-50 rounded-xl p-3"><p class="text-xs text-gray-500">HCG</p><p class="text-lg font-bold text-gray-800">'+l.hcg+' <span class="text-xs font-normal">mIU/mL</span></p>';if(r.length>=2){const p=r[r.length-2],rt=(l.hcg/p.hcg).toFixed(1);h+='<p class="text-xs text-green-600">较上次 '+rt+' 倍</p>'}else h+='<span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">正常</span>';h+='</div></div>';c.innerHTML=h}
+const DEFAULT_REPORTS=[{date:'2026-08-15',progesterone:20.93,hcg:54.47,tip:'首次抽血确认怀孕，HCG基数较低，建议48小时后复查翻倍情况。'},{date:'2026-08-17',progesterone:23.37,hcg:121.87,tip:'HCG较上次48小时翻2.2倍，翻倍良好；孕酮正常。'},{date:'2026-08-19',progesterone:19.96,hcg:335.05,tip:'HCG较上次48小时翻2.7倍，翻倍良好；孕酮在正常范围内。'},{date:'2026-08-21',progesterone:14.03,hcg:850.07,tip:'孕酮值在正常范围内但偏低，建议遵医嘱补充黄体酮，1周后复查HCG翻倍情况和孕酮水平。'}];
+function initReports(){let r=getReports(),changed=false;DEFAULT_REPORTS.forEach(d=>{if(!r.some(x=>x.date===d.date)){r.push(Object.assign({},d));changed=true}});if(changed){r.sort((a,b)=>a.date.localeCompare(b.date));saveReports(r)}return r}
+function renderReports(){const r=initReports(),c=document.getElementById('reportCompare');if(!r.length){c.innerHTML='<p class="text-xs text-gray-400">暂无报告记录</p>';return}const l=r[r.length-1];document.getElementById('latestReportDate').textContent=l.date;document.getElementById('reportTip').innerHTML='<i class="fas fa-exclamation-triangle mr-1"></i><strong>温馨提示：</strong>'+l.tip;let h='<div class="grid grid-cols-2 gap-3">';h+='<div class="bg-pink-50 rounded-xl p-3"><p class="text-xs text-gray-500">孕酮</p><p class="text-lg font-bold text-gray-800">'+l.progesterone+' <span class="text-xs font-normal">ng/mL</span></p>';if(r.length>=2){const p=r[r.length-2],d=(l.progesterone-p.progesterone).toFixed(2),cl=d>=0?'text-green-600':'text-red-500',ar=d>=0?'↑':'↓';h+='<p class="text-xs '+cl+'">上一次 '+p.progesterone+' '+ar+' '+Math.abs(d)+'</p>'}else h+='<span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">正常偏低</span>';h+='</div>';h+='<div class="bg-pink-50 rounded-xl p-3"><p class="text-xs text-gray-500">HCG</p><p class="text-lg font-bold text-gray-800">'+l.hcg+' <span class="text-xs font-normal">mIU/mL</span></p>';if(r.length>=2){const p=r[r.length-2],rt=(l.hcg/p.hcg).toFixed(1);h+='<p class="text-xs text-green-600">较上次 '+rt+' 倍</p>'}else h+='<span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">正常</span>';h+='</div></div>';c.innerHTML=h;renderReportHistory(r)}
+
+function toggleReportForm(){document.getElementById('reportForm').classList.toggle('hidden')}
+function addReport(){const d=document.getElementById('reportDateInput').value,p=parseFloat(document.getElementById('reportProgInput').value),h=parseFloat(document.getElementById('reportHcgInput').value),t=document.getElementById('reportTipInput').value.trim();if(!d){alert('请选择检查日期');return}if(isNaN(p)||p<0){alert('请输入有效的孕酮值');return}if(isNaN(h)||h<0){alert('请输入有效的HCG值');return}const r=getReports(),i=r.findIndex(x=>x.date===d),tip=t||'数据已记录，请遵医嘱定期复查。';if(i>=0)r[i]={date:d,progesterone:p,hcg:h,tip};else r.push({date:d,progesterone:p,hcg:h,tip});r.sort((a,b)=>a.date.localeCompare(b.date));saveReports(r);document.getElementById('reportDateInput').value='';document.getElementById('reportProgInput').value='';document.getElementById('reportHcgInput').value='';document.getElementById('reportTipInput').value='';document.getElementById('reportForm').classList.add('hidden');renderReports()}
+function deleteReport(date){if(!confirm('确定删除 '+date+' 的检验报告吗？'))return;saveReports(getReports().filter(x=>x.date!==date));renderReports()}
+function renderReportHistory(r){const c=document.getElementById('reportHistory');if(!r.length){c.innerHTML='<p class="text-xs text-gray-400 text-center py-2">暂无历史报告，点击右上角添加</p>';return}c.innerHTML=r.slice().reverse().map(x=>{const d=new Date(x.date+'T00:00:00'),ds=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';return '<div class="bg-gray-50 rounded-xl px-3 py-2"><div class="flex justify-between items-center"><span class="text-xs font-bold text-gray-700"><i class="fas fa-calendar-day text-pink-400 mr-1"></i>'+ds+'</span><button onclick="deleteReport(\''+x.date+'\')" class="text-xs text-gray-300 hover:text-red-400"><i class="fas fa-trash-alt"></i></button></div><div class="flex justify-between mt-1"><span class="text-xs text-gray-600">孕酮 <strong class="text-gray-800">'+x.progesterone+'</strong> ng/mL</span><span class="text-xs text-gray-600">HCG <strong class="text-gray-800">'+x.hcg+'</strong> mIU/mL</span></div></div>'}).join('')}
 
 function getWeightRecords(){try{return JSON.parse(localStorage.getItem(WEIGHT_KEY))||[]}catch(e){return[]}}
 function saveWeightRecords(r){localStorage.setItem(WEIGHT_KEY,JSON.stringify(r))}
@@ -196,14 +216,16 @@ function saveDietRecords(r){localStorage.setItem(DIET_KEY,JSON.stringify(r))}
 function addYesterdayDiet(){const v=document.getElementById('yesterdayDietInput').value.trim();if(!v){alert('请输入昨日饮食内容');return}const r=getDietRecords(),y=new Date();y.setDate(y.getDate()-1);const k=y.toISOString().split('T')[0];r[k]=v;saveDietRecords(r);document.getElementById('yesterdayDietInput').value='';renderYesterdayDiet()}
 function renderYesterdayDiet(){const r=getDietRecords(),y=new Date();y.setDate(y.getDate()-1);const k=y.toISOString().split('T')[0],c=document.getElementById('yesterdayDietDisplay');if(r[k])c.innerHTML='<div class="bg-amber-50 rounded-lg p-3 border border-amber-200"><p class="text-sm text-gray-700">'+r[k]+'</p></div>';else c.innerHTML='<p class="text-xs text-gray-400 text-center py-2">暂无记录，请在下方添加</p>'}
 
-function scrollTo(id){if(id==='top')window.scrollTo({top:0,behavior:'smooth'});else document.getElementById(id)?.scrollIntoView({behavior:'smooth'})}
+function jumpTo(id){if(id==='top'){window.scrollTo({top:0,behavior:'smooth'})}else{const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}}
 function toggleCheck(el){el.classList.toggle('checked');updateProgress()}
 function updateProgress(){const i=document.querySelectorAll('.check-item'),c=document.querySelectorAll('.check-item.checked');document.getElementById('todoProgress').textContent=c.length+'/'+i.length+' 完成'}
 function switchNut(p,btn){document.querySelectorAll('.nut-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.nut-panel').forEach(x=>{x.classList.add('hidden');if(x.dataset.phase===p)x.classList.remove('hidden')})}
 function switchRecipe(m,btn){document.querySelectorAll('.recipe-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.recipe-panel').forEach(x=>{x.classList.add('hidden');if(x.dataset.meal===m)x.classList.remove('hidden')})}
 function switchDev(w,btn){document.querySelectorAll('.dev-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.dev-panel').forEach(x=>{x.classList.add('hidden');if(parseInt(x.dataset.week)===w)x.classList.remove('hidden')})}
 
-document.addEventListener('DOMContentLoaded',function(){updateDateInfo();renderReports();renderRecipes();updateProgress();renderWeight();renderYesterdayDiet()});
+function updateClock(){const t=new Date(),p=n=>(n<10?'0':'')+n;document.getElementById('todayTime').textContent=p(t.getHours())+':'+p(t.getMinutes())}
+
+document.addEventListener('DOMContentLoaded',function(){updateDateInfo();updateClock();renderReports();renderRecipes();updateProgress();renderWeight();renderYesterdayDiet();setInterval(updateClock,1000);setInterval(updateDateInfo,60000)});
 </script>
 </body>
 </html>
