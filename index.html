@@ -32,7 +32,6 @@ body{background:#f8f9fa}
 .timeline-line{position:absolute;left:-17px;top:18px;bottom:-8px;width:2px}
 #checkup,#nutrition,#recipe,#weight,#notes{scroll-margin-top:12px}
 </style>
-<base target="_blank">
 </head>
 <body class="pb-20">
 
@@ -86,7 +85,12 @@ body{background:#f8f9fa}
 
 <!-- 今日待办 -->
 <div class="px-4 mt-5">
-  <div class="flex justify-between items-center mb-3"><h2 class="font-bold text-gray-800 text-lg">今日待办</h2><span class="text-xs text-pink-500" id="todoProgress">0/5 完成</span></div>
+  <div class="flex justify-between items-center mb-3"><h2 class="font-bold text-gray-800 text-lg">今日待办</h2><div class="flex items-center gap-2"><button onclick="toggleReminderPanel()" class="text-xs bg-pink-100 text-pink-600 px-2.5 py-1 rounded-full active:scale-95 transition-transform"><i class="fas fa-bell mr-1"></i>提醒设置</button><span class="text-xs text-pink-500" id="todoProgress">0/5 完成</span></div></div>
+  <div id="reminderPanel" class="hidden bg-white rounded-2xl card-shadow p-4 mb-3">
+    <p class="text-xs text-gray-500 mb-2"><i class="fas fa-info-circle text-pink-400 mr-1"></i>页面打开或挂后台时，到点将 通知+震动+语音播报。页面彻底关闭后失效，用药提醒建议同时设手机系统闹钟</p>
+    <div class="flex gap-2 mb-3"><button id="notifPermBtn" onclick="requestNotifPerm()" class="flex-1 bg-pink-500 text-white py-2 rounded-xl text-xs font-medium active:scale-95 transition-transform">开启系统通知</button><button onclick="testReminder()" class="flex-1 bg-gray-500 text-white py-2 rounded-xl text-xs font-medium active:scale-95 transition-transform"><i class="fas fa-play mr-1"></i>测试提醒</button></div>
+    <div class="space-y-2" id="reminderList"></div>
+  </div>
   <div class="space-y-2" id="todoList">
     <div class="check-item bg-white rounded-xl p-3 card-shadow border border-gray-100 flex items-center" onclick="toggleCheck(this)"><div class="w-5 h-5 rounded border-2 border-gray-300 mr-3 flex items-center justify-center check-box transition-all"><i class="fas fa-check text-white text-xs hidden"></i></div><div class="flex-1"><p class="check-text text-sm text-gray-700">服用优甲乐 (遵医嘱)</p><p class="text-xs text-gray-400">每日一次，早餐前30-60分钟空腹服用</p></div><span class="bg-gradient-to-r from-red-400 to-pink-400 text-white text-xs px-2 py-0.5 rounded-full">医嘱</span></div>
     <div class="check-item bg-white rounded-xl p-3 card-shadow border border-gray-100 flex items-center" onclick="toggleCheck(this)"><div class="w-5 h-5 rounded border-2 border-gray-300 mr-3 flex items-center justify-center check-box transition-all"><i class="fas fa-check text-white text-xs hidden"></i></div><div class="flex-1"><p class="check-text text-sm text-gray-700">服用叶酸 (0.4mg)</p><p class="text-xs text-gray-400">每日一次，早餐后</p></div><span class="bg-gradient-to-r from-green-400 to-teal-400 text-white text-xs px-2 py-0.5 rounded-full">重要</span></div>
@@ -171,6 +175,9 @@ body{background:#f8f9fa}
   </div>
 </div>
 
+<!-- 提醒弹窗 -->
+<div id="reminderToast" class="hidden fixed top-4 left-4 right-4 z-50"><div class="bg-pink-500 text-white rounded-2xl p-4 card-shadow flex items-center"><i class="fas fa-bell text-2xl mr-3 float-anim"></i><div class="flex-1"><p class="font-bold text-sm" id="toastTitle">--</p><p class="text-xs opacity-90 mt-0.5" id="toastText">--</p></div><button onclick="hideToast()" class="text-white/80 text-lg px-2"><i class="fas fa-times"></i></button></div></div>
+
 <!-- 底部导航 -->
 <div class="fixed bottom-0 left-0 right-0 glass border-t border-gray-200 z-50">
   <div class="flex justify-around py-2">
@@ -216,6 +223,25 @@ function saveDietRecords(r){localStorage.setItem(DIET_KEY,JSON.stringify(r))}
 function addYesterdayDiet(){const v=document.getElementById('yesterdayDietInput').value.trim();if(!v){alert('请输入昨日饮食内容');return}const r=getDietRecords(),y=new Date();y.setDate(y.getDate()-1);const k=y.toISOString().split('T')[0];r[k]=v;saveDietRecords(r);document.getElementById('yesterdayDietInput').value='';renderYesterdayDiet()}
 function renderYesterdayDiet(){const r=getDietRecords(),y=new Date();y.setDate(y.getDate()-1);const k=y.toISOString().split('T')[0],c=document.getElementById('yesterdayDietDisplay');if(r[k])c.innerHTML='<div class="bg-amber-50 rounded-lg p-3 border border-amber-200"><p class="text-sm text-gray-700">'+r[k]+'</p></div>';else c.innerHTML='<p class="text-xs text-gray-400 text-center py-2">暂无记录，请在下方添加</p>'}
 
+const REMINDER_KEY='pregnancy_reminder_settings',REMINDER_FIRED_KEY='pregnancy_reminder_fired';
+const DEFAULT_REMINDERS=[{id:'yjl',name:'服用优甲乐',time:'07:30',text:'该服用优甲乐啦，记得早餐前半小时空腹服用，不要和钙片铁剂一起吃哦',on:true},{id:'ys',name:'服用叶酸',time:'08:30',text:'早餐后记得服用叶酸0.4毫克',on:true},{id:'d3',name:'补充维生素D3',time:'12:30',text:'午餐时记得补充维生素D3，随餐服用吸收更好',on:true},{id:'htt',name:'补充黄体酮',time:'21:00',text:'记得按医嘱补充黄体酮',on:true},{id:'w1',name:'喝水提醒',time:'10:00',text:'该喝水啦，今天目标2000毫升',on:true},{id:'w2',name:'喝水提醒',time:'15:00',text:'下午记得补充水分哦',on:true},{id:'w3',name:'喝水提醒',time:'19:00',text:'晚上适量喝水，睡前少喝避免起夜',on:true}];
+function getReminders(){try{const r=JSON.parse(localStorage.getItem(REMINDER_KEY));if(r&&r.length)return r}catch(e){}return DEFAULT_REMINDERS.map(x=>Object.assign({},x))}
+function saveReminders(r){localStorage.setItem(REMINDER_KEY,JSON.stringify(r))}
+function localDateStr(){const d=new Date(),p=n=>(n<10?'0':'')+n;return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
+function getFired(){try{return JSON.parse(localStorage.getItem(REMINDER_FIRED_KEY))||{}}catch(e){return{}}}
+function markFired(id){const f=getFired(),t=localDateStr();if(!f[t])f[t]=[];if(f[t].indexOf(id)<0)f[t].push(id);localStorage.setItem(REMINDER_FIRED_KEY,JSON.stringify(f))}
+function toggleReminderPanel(){document.getElementById('reminderPanel').classList.toggle('hidden');updatePermBtn()}
+function setReminderTime(id,v){const r=getReminders(),x=r.find(y=>y.id===id);if(x&&v){x.time=v;saveReminders(r)}}
+function toggleReminder(id){const r=getReminders(),x=r.find(y=>y.id===id);if(x){x.on=!x.on;saveReminders(r);renderReminders()}}
+function renderReminders(){const c=document.getElementById('reminderList');if(!c)return;c.innerHTML=getReminders().map(r=>'<div class="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2"><span class="text-sm text-gray-700 flex-1">'+r.name+'</span><input type="time" value="'+r.time+'" onchange="setReminderTime(\''+r.id+'\',this.value)" class="border-2 border-gray-200 rounded-lg px-2 py-1 text-sm w-24 mr-2 bg-white"><button onclick="toggleReminder(\''+r.id+'\')" class="text-xs px-2.5 py-1 rounded-full whitespace-nowrap '+(r.on?'bg-green-100 text-green-600':'bg-gray-200 text-gray-400')+'">'+(r.on?'已开启':'已关闭')+'</button></div>').join('')}
+function updatePermBtn(){const b=document.getElementById('notifPermBtn');if(!b)return;if(!('Notification' in window)){b.textContent='不支持系统通知';b.className='flex-1 bg-gray-300 text-white py-2 rounded-xl text-xs font-medium'}else{const p=Notification.permission;b.textContent=p==='granted'?'✓ 通知已开启':p==='denied'?'通知被拒绝(请到浏览器设置开启)':'开启系统通知';b.className='flex-1 '+(p==='granted'?'bg-green-500':'bg-pink-500')+' text-white py-2 rounded-xl text-xs font-medium active:scale-95 transition-transform'}}
+function requestNotifPerm(){if(!('Notification' in window)){showToast('不支持系统通知','将使用页面内弹窗 + 震动 + 语音播报');return}Notification.requestPermission().then(p=>{updatePermBtn();if(p==='granted')showToast('通知权限已开启','到点将弹出系统通知');else showToast('未获得通知权限','将使用页面内弹窗 + 震动 + 语音播报')})}
+function showToast(title,text){document.getElementById('toastTitle').textContent=title;document.getElementById('toastText').textContent=text;const t=document.getElementById('reminderToast');t.classList.remove('hidden');clearTimeout(t._timer);t._timer=setTimeout(hideToast,20000)}
+function hideToast(){document.getElementById('reminderToast').classList.add('hidden')}
+function fireReminder(r){showToast('⏰ '+r.name,r.text);if('Notification' in window&&Notification.permission==='granted'){try{new Notification('孕期管家 · '+r.name,{body:r.text})}catch(e){}}if(navigator.vibrate){try{navigator.vibrate([400,200,400,200,400])}catch(e){}}try{const u=new SpeechSynthesisUtterance(r.text);u.lang='zh-CN';u.rate=0.9;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+function testReminder(){fireReminder({name:'测试提醒',text:'这是测试提醒，如果听到语音并感到震动，说明一切正常'})}
+function checkReminders(){const n=new Date(),p=x=>(x<10?'0':'')+x,hm=p(n.getHours())+':'+p(n.getMinutes()),f=getFired(),done=f[localDateStr()]||[];getReminders().forEach(r=>{if(r.on&&r.time===hm&&done.indexOf(r.id)<0){fireReminder(r);markFired(r.id)}})}
+
 function jumpTo(id){if(id==='top'){window.scrollTo({top:0,behavior:'smooth'})}else{const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}}
 function toggleCheck(el){el.classList.toggle('checked');updateProgress()}
 function updateProgress(){const i=document.querySelectorAll('.check-item'),c=document.querySelectorAll('.check-item.checked');document.getElementById('todoProgress').textContent=c.length+'/'+i.length+' 完成'}
@@ -225,7 +251,7 @@ function switchDev(w,btn){document.querySelectorAll('.dev-tab').forEach(t=>t.cla
 
 function updateClock(){const t=new Date(),p=n=>(n<10?'0':'')+n;document.getElementById('todayTime').textContent=p(t.getHours())+':'+p(t.getMinutes())}
 
-document.addEventListener('DOMContentLoaded',function(){updateDateInfo();updateClock();renderReports();renderRecipes();updateProgress();renderWeight();renderYesterdayDiet();setInterval(updateClock,1000);setInterval(updateDateInfo,60000)});
+document.addEventListener('DOMContentLoaded',function(){updateDateInfo();updateClock();renderReports();renderRecipes();updateProgress();renderWeight();renderYesterdayDiet();renderReminders();updatePermBtn();checkReminders();setInterval(updateClock,1000);setInterval(updateDateInfo,60000);setInterval(checkReminders,20000)});
 </script>
 </body>
 </html>
