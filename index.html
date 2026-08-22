@@ -30,783 +30,704 @@ body { background: #f8f9fa; }
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
-.weight-input:focus { outline: none; border-color: #e91e63; }
+.weight-input:focus, .diet-input:focus { outline: none; border-color: #e91e63; }
 .timeline-dot { width: 12px; height: 12px; border-radius: 50%; position: absolute; left: -22px; top: 6px; }
 .timeline-line { position: absolute; left: -17px; top: 18px; bottom: -8px; width: 2px; }
 </style>
 </head>
 <body class="pb-20">
 
-<!-- 顶部信息栏 -->
+<!-- 顶部信息栏 - 自动计算日期和孕周 -->
 <div class="gradient-bg px-4 pt-12 pb-6 rounded-b-3xl relative overflow-hidden">
-    <div class="absolute top-0 right-0 opacity-20">
-        <i class="fas fa-baby text-9xl text-white transform rotate-12 translate-x-4 -translate-y-4"></i>
+  <div class="absolute top-0 right-0 opacity-20">
+    <i class="fas fa-baby text-9xl text-white transform rotate-12 translate-x-4 -translate-y-4"></i>
+  </div>
+  <div class="relative z-10">
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <p class="text-white/80 text-sm">今天是</p>
+        <p class="text-white text-lg font-semibold" id="todayDate">--</p>
+      </div>
+      <div class="glass rounded-full px-3 py-1">
+        <span class="text-pink-600 text-xs font-medium" id="pregnancyPhase"><i class="fas fa-heart mr-1"></i>--</span>
+      </div>
     </div>
-    <div class="relative z-10">
-        <div class="flex justify-between items-center mb-4">
-            <div>
-                <p class="text-white/80 text-sm">今天是</p>
-                <p class="text-white text-lg font-semibold" id="todayDate">2026年8月21日</p>
-            </div>
-            <div class="glass rounded-full px-3 py-1">
-                <span class="text-pink-600 text-xs font-medium"><i class="fas fa-heart mr-1"></i>孕早期</span>
-            </div>
+    <div class="flex items-center justify-center mb-4">
+      <div class="relative">
+        <svg class="progress-ring" width="140" height="140">
+          <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="8"/>
+          <circle id="progressCircle" cx="70" cy="70" r="60" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="360"/>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span class="text-white text-3xl font-bold" id="currentWeek">--</span>
+          <span class="text-white/80 text-xs">周 + <span id="currentDay">--</span>天</span>
         </div>
-        <div class="flex items-center justify-center mb-4">
-            <div class="relative">
-                <svg class="progress-ring" width="140" height="140">
-                    <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="8"/>
-                    <circle cx="70" cy="70" r="60" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="360"/>
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                    <span class="text-white text-3xl font-bold">4</span>
-                    <span class="text-white/80 text-xs">周 + 3天</span>
-                </div>
-            </div>
-            <div class="ml-6 text-white">
-                <p class="text-sm opacity-80">距离预产期还有</p>
-                <p class="text-2xl font-bold">249<span class="text-sm font-normal">天</span></p>
-                <p class="text-xs opacity-70 mt-1">预产期: 2027-04-27</p>
-            </div>
-        </div>
-        <div class="glass rounded-2xl p-3 flex items-center">
-            <span class="text-4xl float-anim mr-3">🫘</span>
-            <div>
-                <p class="text-gray-700 text-sm font-medium">宝宝现在像一颗</p>
-                <p class="text-pink-600 font-bold">小芝麻籽</p>
-                <p class="text-gray-500 text-xs">身长约 2-4mm</p>
-            </div>
-        </div>
+      </div>
+      <div class="ml-6 text-white">
+        <p class="text-sm opacity-80">距离预产期还有</p>
+        <p class="text-2xl font-bold" id="daysLeft">--<span class="text-sm font-normal">天</span></p>
+        <p class="text-xs opacity-70 mt-1">预产期: <span id="dueDate">--</span></p>
+      </div>
     </div>
+    <div class="glass rounded-2xl p-3 flex items-center">
+      <span class="text-4xl float-anim mr-3" id="babyEmoji">🫘</span>
+      <div>
+        <p class="text-gray-700 text-sm font-medium">宝宝现在像一颗</p>
+        <p class="text-pink-600 font-bold" id="babySize">--</p>
+        <p class="text-gray-500 text-xs" id="babyLength">--</p>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- 检验报告解读 -->
+<!-- 检验报告解读 - 支持历史对比 -->
 <div class="px-4 -mt-3 relative z-10">
-    <div class="glass card-shadow rounded-2xl p-4 border-l-4 border-pink-400">
-        <div class="flex justify-between items-start mb-3">
-            <h3 class="font-bold text-gray-800"><i class="fas fa-file-medical-alt text-pink-500 mr-2"></i>检验报告解读</h3>
-            <span class="text-xs text-gray-400">2026-08-21</span>
-        </div>
-        <div class="grid grid-cols-2 gap-3 mb-3">
-            <div class="bg-pink-50 rounded-xl p-3">
-                <p class="text-xs text-gray-500">孕酮</p>
-                <p class="text-lg font-bold text-gray-800">14.03 <span class="text-xs font-normal">ng/mL</span></p>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">正常偏低</span>
-            </div>
-            <div class="bg-pink-50 rounded-xl p-3">
-                <p class="text-xs text-gray-500">HCG</p>
-                <p class="text-lg font-bold text-gray-800">850.07 <span class="text-xs font-normal">mIU/mL</span></p>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">正常</span>
-            </div>
-        </div>
-        <div class="bg-amber-50 rounded-xl p-3 border border-amber-200">
-            <p class="text-xs text-amber-800"><i class="fas fa-exclamation-triangle mr-1"></i><strong>温馨提示：</strong>孕酮值在正常范围内但偏低，建议遵医嘱补充黄体酮，1周后复查HCG翻倍情况和孕酮水平。</p>
-        </div>
+  <div class="glass card-shadow rounded-2xl p-4 border-l-4 border-pink-400">
+    <div class="flex justify-between items-start mb-3">
+      <h3 class="font-bold text-gray-800"><i class="fas fa-file-medical-alt text-pink-500 mr-2"></i>检验报告解读</h3>
+      <span class="text-xs text-gray-400" id="latestReportDate">--</span>
     </div>
+    <div id="reportCompare"></div>
+    <div class="bg-amber-50 rounded-xl p-3 border border-amber-200 mt-3">
+      <p class="text-xs text-amber-800" id="reportTip"><i class="fas fa-exclamation-triangle mr-1"></i><strong>温馨提示：</strong>--</p>
+    </div>
+  </div>
 </div>
 
 <!-- 快捷入口 -->
 <div class="px-4 mt-4">
-    <div class="grid grid-cols-4 gap-3">
-        <div class="flex flex-col items-center" onclick="scrollTo('checkup')">
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-100 to-pink-100 flex items-center justify-center card-shadow mb-1">
-                <i class="fas fa-hospital text-xl text-teal-600"></i>
-            </div>
-            <span class="text-xs text-gray-600">产检提醒</span>
-        </div>
-        <div class="flex flex-col items-center" onclick="scrollTo('nutrition')">
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-yellow-100 flex items-center justify-center card-shadow mb-1">
-                <i class="fas fa-apple-alt text-xl text-orange-600"></i>
-            </div>
-            <span class="text-xs text-gray-600">营养补充</span>
-        </div>
-        <div class="flex flex-col items-center" onclick="scrollTo('recipe')">
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center card-shadow mb-1">
-                <i class="fas fa-utensils text-xl text-amber-600"></i>
-            </div>
-            <span class="text-xs text-gray-600">每日食谱</span>
-        </div>
-        <div class="flex flex-col items-center" onclick="scrollTo('weight')">
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center card-shadow mb-1">
-                <i class="fas fa-weight text-xl text-indigo-600"></i>
-            </div>
-            <span class="text-xs text-gray-600">体重记录</span>
-        </div>
-    </div>
+  <div class="grid grid-cols-4 gap-3">
+    <div class="flex flex-col items-center" onclick="scrollTo('checkup')"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-100 to-pink-100 flex items-center justify-center card-shadow mb-1"><i class="fas fa-hospital text-xl text-teal-600"></i></div><span class="text-xs text-gray-600">产检提醒</span></div>
+    <div class="flex flex-col items-center" onclick="scrollTo('nutrition')"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-yellow-100 flex items-center justify-center card-shadow mb-1"><i class="fas fa-apple-alt text-xl text-orange-600"></i></div><span class="text-xs text-gray-600">营养补充</span></div>
+    <div class="flex flex-col items-center" onclick="scrollTo('recipe')"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center card-shadow mb-1"><i class="fas fa-utensils text-xl text-amber-600"></i></div><span class="text-xs text-gray-600">每日食谱</span></div>
+    <div class="flex flex-col items-center" onclick="scrollTo('weight')"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center card-shadow mb-1"><i class="fas fa-weight text-xl text-indigo-600"></i></div><span class="text-xs text-gray-600">体重记录</span></div>
+  </div>
 </div>
 
 <!-- 今日待办 -->
 <div class="px-4 mt-5">
-    <div class="flex justify-between items-center mb-3">
-        <h2 class="font-bold text-gray-800 text-lg">今日待办</h2>
-        <span class="text-xs text-pink-500" id="todoProgress">0/3 完成</span>
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="font-bold text-gray-800 text-lg">今日待办</h2>
+    <span class="text-xs text-pink-500" id="todoProgress">0/3 完成</span>
+  </div>
+  <div class="space-y-2" id="todoList">
+    <div class="check-item bg-white rounded-xl p-3 card-shadow border border-gray-100 flex items-center" onclick="toggleCheck(this)">
+      <div class="w-5 h-5 rounded border-2 border-gray-300 mr-3 flex items-center justify-center check-box transition-all"><i class="fas fa-check text-white text-xs hidden"></i></div>
+      <div class="flex-1"><p class="check-text text-sm text-gray-700">服用叶酸 (0.4mg)</p><p class="text-xs text-gray-400">每日一次，早餐后</p></div>
+      <span class="bg-gradient-to-r from-green-400 to-teal-400 text-white text-xs px-2 py-0.5 rounded-full">重要</span>
     </div>
-    <div class="space-y-2" id="todoList">
-        <div class="check-item bg-white rounded-xl p-3 card-shadow border border-gray-100 flex items-center" onclick="toggleCheck(this)">
-            <div class="w-5 h-5 rounded border-2 border-gray-300 mr-3 flex items-center justify-center check-box transition-all"><i class="fas fa-check text-white text-xs hidden"></i></div>
-            <div class="flex-1">
-                <p class="check-text text-sm text-gray-700">服用叶酸 (0.4mg)</p>
-                <p class="text-xs text-gray-400">每日一次，早餐后</p>
-            </div>
-            <span class="bg-gradient-to-r from-green-400 to-teal-400 text-white text-xs px-2 py-0.5 rounded-full">重要</span>
-        </div>
-        <div class="check-item bg-white rounded-xl p-3 card-shadow border border-gray-100 flex items-center" onclick="toggleCheck(this)">
-            <div class="w-5 h-5 rounded border-2 border-gray-300 mr-3 flex items-center justify-center check-box transition-all"><i class="fas fa-check text-white text-xs hidden"></i></div>
-            <div class="flex-1">
-                <p class="check-text text-sm text-gray-700">补充黄体酮 (遵医嘱)</p>
-                <p class="text-xs text-gray-400">根据检验报告建议</p>
-            </div>
-            <span class="bg-gradient-to-r from-red-400 to-pink-400 text-white text-xs px-2 py-0.5 rounded-full">医嘱</span>
-        </div>
-        <div class="check-item bg-white rounded-xl p-3 card-shadow border border-gray-100 flex items-center" onclick="toggleCheck(this)">
-            <div class="w-5 h-5 rounded border-2 border-gray-300 mr-3 flex items-center justify-center check-box transition-all"><i class="fas fa-check text-white text-xs hidden"></i></div>
-            <div class="flex-1">
-                <p class="check-text text-sm text-gray-700">多喝水 (2000ml)</p>
-                <p class="text-xs text-gray-400">保持身体水分充足</p>
-            </div>
-            <span class="bg-gradient-to-r from-teal-400 to-blue-400 text-white text-xs px-2 py-0.5 rounded-full">日常</span>
-        </div>
+    <div class="check-item bg-white rounded-xl p-3 card-shadow border border-gray-100 flex items-center" onclick="toggleCheck(this)">
+      <div class="w-5 h-5 rounded border-2 border-gray-300 mr-3 flex items-center justify-center check-box transition-all"><i class="fas fa-check text-white text-xs hidden"></i></div>
+      <div class="flex-1"><p class="check-text text-sm text-gray-700">补充黄体酮 (遵医嘱)</p><p class="text-xs text-gray-400">根据检验报告建议</p></div>
+      <span class="bg-gradient-to-r from-red-400 to-pink-400 text-white text-xs px-2 py-0.5 rounded-full">医嘱</span>
     </div>
+    <div class="check-item bg-white rounded-xl p-3 card-shadow border border-gray-100 flex items-center" onclick="toggleCheck(this)">
+      <div class="w-5 h-5 rounded border-2 border-gray-300 mr-3 flex items-center justify-center check-box transition-all"><i class="fas fa-check text-white text-xs hidden"></i></div>
+      <div class="flex-1"><p class="check-text text-sm text-gray-700">多喝水 (2000ml)</p><p class="text-xs text-gray-400">保持身体水分充足</p></div>
+      <span class="bg-gradient-to-r from-teal-400 to-blue-400 text-white text-xs px-2 py-0.5 rounded-full">日常</span>
+    </div>
+  </div>
 </div>
 
 <!-- 产检时间表 -->
 <div class="px-4 mt-6" id="checkup">
-    <div class="flex justify-between items-center mb-3">
-        <h2 class="font-bold text-gray-800 text-lg"><i class="fas fa-hospital text-pink-500 mr-2"></i>产检时间表</h2>
-        <span class="text-xs bg-pink-100 text-pink-600 px-2 py-1 rounded-full">共11次</span>
-    </div>
-    <div class="bg-white rounded-2xl card-shadow p-4">
-        <div class="relative pl-6 space-y-4">
-            <!-- 已完成 -->
-            <div class="relative">
-                <div class="timeline-dot bg-pink-500 border-2 border-white"></div>
-                <div class="timeline-line bg-pink-200"></div>
-                <div class="bg-pink-50 rounded-xl p-3 border border-pink-100">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-sm text-gray-800">✅ 确认怀孕（已做）</span>
-                        <span class="text-xs text-gray-500">孕4周</span>
-                    </div>
-                    <p class="text-xs text-gray-600 mt-1">抽血查HCG、孕酮 — 2026年8月21日</p>
-                </div>
-            </div>
-            <!-- 即将进行 -->
-            <div class="relative">
-                <div class="timeline-dot bg-white border-2 border-pink-500 animate-pulse"></div>
-                <div class="timeline-line bg-gray-200"></div>
-                <div class="bg-white rounded-xl p-3 border-2 border-pink-300">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-sm text-pink-700">📅 第一次B超（即将）</span>
-                        <span class="text-xs bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full">孕6-8周</span>
-                    </div>
-                    <p class="text-xs text-gray-600 mt-1"><strong>确认宫内孕、排除宫外孕</strong>，查看胎心胎芽</p>
-                    <p class="text-xs text-red-500 mt-1"><i class="fas fa-heartbeat mr-1"></i>如腹痛/出血需提前检查，排除宫外孕风险</p>
-                    <p class="text-xs text-amber-600 mt-1"><i class="fas fa-clock mr-1"></i>2026年9月1日 — 9月15日</p>
-                </div>
-            </div>
-            <!-- 后续检查 -->
-            <div class="relative">
-                <div class="timeline-dot bg-gray-200 border-2 border-white"></div>
-                <div class="timeline-line bg-gray-200"></div>
-                <div class="bg-gray-50 rounded-xl p-3">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-sm text-gray-700">NT检查 + 建档</span>
-                        <span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕11-13周</span>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">颈部透明层厚度检查，建立孕期档案</p>
-                    <p class="text-xs text-gray-400 mt-0.5">2026年9月22日 — 10月6日</p>
-                </div>
-            </div>
-            <div class="relative">
-                <div class="timeline-dot bg-gray-200 border-2 border-white"></div>
-                <div class="timeline-line bg-gray-200"></div>
-                <div class="bg-gray-50 rounded-xl p-3">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-sm text-gray-700">唐氏筛查 / 无创DNA</span>
-                        <span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕15-20周</span>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">排查染色体异常风险</p>
-                    <p class="text-xs text-gray-400 mt-0.5">2026年10月20日 — 11月24日</p>
-                </div>
-            </div>
-            <div class="relative">
-                <div class="timeline-dot bg-gray-200 border-2 border-white"></div>
-                <div class="timeline-line bg-gray-200"></div>
-                <div class="bg-gray-50 rounded-xl p-3">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-sm text-gray-700">四维彩超（大排畸）</span>
-                        <span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕22-26周</span>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">全面检查胎儿器官发育，可看到宝宝模样</p>
-                    <p class="text-xs text-gray-400 mt-0.5">2026年12月8日 — 2027年1月5日</p>
-                </div>
-            </div>
-            <div class="relative">
-                <div class="timeline-dot bg-gray-200 border-2 border-white"></div>
-                <div class="timeline-line bg-gray-200"></div>
-                <div class="bg-gray-50 rounded-xl p-3">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-sm text-gray-700">糖耐量测试（OGTT）</span>
-                        <span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕24-28周</span>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">筛查妊娠糖尿病，需空腹</p>
-                    <p class="text-xs text-gray-400 mt-0.5">2026年12月22日 — 2027年1月19日</p>
-                </div>
-            </div>
-            <div class="relative">
-                <div class="timeline-dot bg-gray-200 border-2 border-white"></div>
-                <div class="timeline-line bg-gray-200"></div>
-                <div class="bg-gray-50 rounded-xl p-3">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-sm text-gray-700">小排畸 + 胎心监护</span>
-                        <span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕30-32周</span>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">评估胎儿生长发育情况</p>
-                    <p class="text-xs text-gray-400 mt-0.5">2027年2月2日 — 2月16日</p>
-                </div>
-            </div>
-            <div class="relative">
-                <div class="timeline-dot bg-gray-200 border-2 border-white"></div>
-                <div class="bg-gray-50 rounded-xl p-3">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-sm text-gray-700">胎心监护（每周一次）</span>
-                        <span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕34周起</span>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">监测胎心、宫缩，评估胎儿宫内状况</p>
-                    <p class="text-xs text-gray-400 mt-0.5">2027年3月2日起，每周一次</p>
-                </div>
-            </div>
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="font-bold text-gray-800 text-lg"><i class="fas fa-hospital text-pink-500 mr-2"></i>产检时间表</h2>
+    <span class="text-xs bg-pink-100 text-pink-600 px-2 py-1 rounded-full">共11次</span>
+  </div>
+  <div class="bg-white rounded-2xl card-shadow p-4">
+    <div class="relative pl-6 space-y-4">
+      <div class="relative">
+        <div class="timeline-dot bg-pink-500 border-2 border-white"></div>
+        <div class="timeline-line bg-pink-200"></div>
+        <div class="bg-pink-50 rounded-xl p-3 border border-pink-100">
+          <div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-800">✅ 确认怀孕（已做）</span><span class="text-xs text-gray-500">孕4周</span></div>
+          <p class="text-xs text-gray-600 mt-1">抽血查HCG、孕酮 — 2026年8月21日</p>
         </div>
+      </div>
+      <div class="relative">
+        <div class="timeline-dot bg-white border-2 border-pink-500 animate-pulse"></div>
+        <div class="timeline-line bg-gray-200"></div>
+        <div class="bg-white rounded-xl p-3 border-2 border-pink-300">
+          <div class="flex justify-between items-center"><span class="font-bold text-sm text-pink-700">📅 第一次B超（即将）</span><span class="text-xs bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full">孕6-8周</span></div>
+          <p class="text-xs text-gray-600 mt-1"><strong>确认宫内孕、排除宫外孕</strong>，查看胎心胎芽</p>
+          <p class="text-xs text-red-500 mt-1"><i class="fas fa-heartbeat mr-1"></i>如腹痛/出血需提前检查，排除宫外孕风险</p>
+          <p class="text-xs text-amber-600 mt-1"><i class="fas fa-clock mr-1"></i>2026年9月1日 — 9月15日</p>
+        </div>
+      </div>
+      <div class="relative">
+        <div class="timeline-dot bg-gray-200 border-2 border-white"></div>
+        <div class="timeline-line bg-gray-200"></div>
+        <div class="bg-gray-50 rounded-xl p-3">
+          <div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-700">NT检查 + 建档</span><span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕11-13周</span></div>
+          <p class="text-xs text-gray-500 mt-1">颈部透明层厚度检查，建立孕期档案</p>
+          <p class="text-xs text-gray-400 mt-0.5">2026年9月22日 — 10月6日</p>
+        </div>
+      </div>
+      <div class="relative">
+        <div class="timeline-dot bg-gray-200 border-2 border-white"></div>
+        <div class="timeline-line bg-gray-200"></div>
+        <div class="bg-gray-50 rounded-xl p-3">
+          <div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-700">唐氏筛查 / 无创DNA</span><span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕15-20周</span></div>
+          <p class="text-xs text-gray-500 mt-1">排查染色体异常风险</p>
+          <p class="text-xs text-gray-400 mt-0.5">2026年10月20日 — 11月24日</p>
+        </div>
+      </div>
+      <div class="relative">
+        <div class="timeline-dot bg-gray-200 border-2 border-white"></div>
+        <div class="timeline-line bg-gray-200"></div>
+        <div class="bg-gray-50 rounded-xl p-3">
+          <div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-700">四维彩超（大排畸）</span><span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕22-26周</span></div>
+          <p class="text-xs text-gray-500 mt-1">全面检查胎儿器官发育，可看到宝宝模样</p>
+          <p class="text-xs text-gray-400 mt-0.5">2026年12月8日 — 2027年1月5日</p>
+        </div>
+      </div>
+      <div class="relative">
+        <div class="timeline-dot bg-gray-200 border-2 border-white"></div>
+        <div class="timeline-line bg-gray-200"></div>
+        <div class="bg-gray-50 rounded-xl p-3">
+          <div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-700">糖耐量测试（OGTT）</span><span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕24-28周</span></div>
+          <p class="text-xs text-gray-500 mt-1">筛查妊娠糖尿病，需空腹</p>
+          <p class="text-xs text-gray-400 mt-0.5">2026年12月22日 — 2027年1月19日</p>
+        </div>
+      </div>
+      <div class="relative">
+        <div class="timeline-dot bg-gray-200 border-2 border-white"></div>
+        <div class="timeline-line bg-gray-200"></div>
+        <div class="bg-gray-50 rounded-xl p-3">
+          <div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-700">小排畸 + 胎心监护</span><span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕30-32周</span></div>
+          <p class="text-xs text-gray-500 mt-1">评估胎儿生长发育情况</p>
+          <p class="text-xs text-gray-400 mt-0.5">2027年2月2日 — 2月16日</p>
+        </div>
+      </div>
+      <div class="relative">
+        <div class="timeline-dot bg-gray-200 border-2 border-white"></div>
+        <div class="bg-gray-50 rounded-xl p-3">
+          <div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-700">胎心监护（每周一次）</span><span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕34周起</span></div>
+          <p class="text-xs text-gray-500 mt-1">监测胎心、宫缩，评估胎儿宫内状况</p>
+          <p class="text-xs text-gray-400 mt-0.5">2027年3月2日起，每周一次</p>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- 营养补充 -->
 <div class="px-4 mt-6" id="nutrition">
-    <div class="flex justify-between items-center mb-3">
-        <h2 class="font-bold text-gray-800 text-lg"><i class="fas fa-apple-alt text-orange-500 mr-2"></i>营养补充指南</h2>
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="font-bold text-gray-800 text-lg"><i class="fas fa-apple-alt text-orange-500 mr-2"></i>营养补充指南</h2>
+  </div>
+  <div class="flex space-x-3 overflow-x-auto hide-scrollbar pb-2" id="nutTabs">
+    <button class="nut-tab active whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchNut('early',this)">孕早期 (1-12周)</button>
+    <button class="nut-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchNut('mid',this)">孕中期 (13-28周)</button>
+    <button class="nut-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchNut('late',this)">孕晚期 (29-40周)</button>
+  </div>
+  <div class="mt-3 space-y-3" id="nutContent">
+    <div class="nut-panel" data-phase="early">
+      <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3"><div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl mr-3">💊</div><div class="flex-1"><h4 class="font-bold text-gray-800">叶酸 (必须)</h4><p class="text-xs text-gray-500">每日 0.4-0.8mg，预防神经管畸形</p></div><span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-lg font-medium">必吃</span></div>
+      <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3"><div class="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center text-2xl mr-3">🍳</div><div class="flex-1"><h4 class="font-bold text-gray-800">优质蛋白质</h4><p class="text-xs text-gray-500">鸡蛋、鱼肉、瘦肉、豆制品</p></div></div>
+      <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3"><div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-2xl mr-3">💧</div><div class="flex-1"><h4 class="font-bold text-gray-800">充足水分</h4><p class="text-xs text-gray-500">每天 1500-2000ml，促进新陈代谢</p></div></div>
+      <div class="bg-white rounded-2xl card-shadow p-4 flex items-center"><div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-2xl mr-3">🥗</div><div class="flex-1"><h4 class="font-bold text-gray-800">深绿色蔬菜</h4><p class="text-xs text-gray-500">菠菜、西兰花，补充维生素和纤维</p></div></div>
     </div>
-    <div class="flex space-x-3 overflow-x-auto hide-scrollbar pb-2" id="nutTabs">
-        <button class="nut-tab active whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchNut('early',this)">孕早期 (1-12周)</button>
-        <button class="nut-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchNut('mid',this)">孕中期 (13-28周)</button>
-        <button class="nut-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchNut('late',this)">孕晚期 (29-40周)</button>
+    <div class="nut-panel hidden" data-phase="mid">
+      <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3"><div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-2xl mr-3">🥛</div><div class="flex-1"><h4 class="font-bold text-gray-800">钙 (1000mg/天)</h4><p class="text-xs text-gray-500">牛奶、酸奶、奶酪、虾皮、芝麻</p></div><span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-lg font-medium">必吃</span></div>
+      <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3"><div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-2xl mr-3">🥩</div><div class="flex-1"><h4 class="font-bold text-gray-800">铁 (预防贫血)</h4><p class="text-xs text-gray-500">红肉、动物肝脏、菠菜，搭配维C促进吸收</p></div><span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-lg font-medium">必吃</span></div>
+      <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3"><div class="w-12 h-12 rounded-xl bg-cyan-100 flex items-center justify-center text-2xl mr-3">🐟</div><div class="flex-1"><h4 class="font-bold text-gray-800">DHA</h4><p class="text-xs text-gray-500">深海鱼（三文鱼、鳕鱼）、核桃、藻类DHA</p></div></div>
+      <div class="bg-white rounded-2xl card-shadow p-4 flex items-center"><div class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-2xl mr-3">🍊</div><div class="flex-1"><h4 class="font-bold text-gray-800">复合维生素</h4><p class="text-xs text-gray-500">多种维生素矿物质，全面补充</p></div></div>
     </div>
-    <div class="mt-3 space-y-3" id="nutContent">
-        <div class="nut-panel" data-phase="early">
-            <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3">
-                <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl mr-3">💊</div>
-                <div class="flex-1">
-                    <h4 class="font-bold text-gray-800">叶酸 (必须)</h4>
-                    <p class="text-xs text-gray-500">每日 0.4-0.8mg，预防神经管畸形</p>
-                </div>
-                <span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-lg font-medium">必吃</span>
-            </div>
-            <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3">
-                <div class="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center text-2xl mr-3">🍳</div>
-                <div class="flex-1">
-                    <h4 class="font-bold text-gray-800">优质蛋白质</h4>
-                    <p class="text-xs text-gray-500">鸡蛋、鱼肉、瘦肉、豆制品</p>
-                </div>
-            </div>
-            <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3">
-                <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-2xl mr-3">💧</div>
-                <div class="flex-1">
-                    <h4 class="font-bold text-gray-800">充足水分</h4>
-                    <p class="text-xs text-gray-500">每天 1500-2000ml，促进新陈代谢</p>
-                </div>
-            </div>
-            <div class="bg-white rounded-2xl card-shadow p-4 flex items-center">
-                <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-2xl mr-3">🥗</div>
-                <div class="flex-1">
-                    <h4 class="font-bold text-gray-800">深绿色蔬菜</h4>
-                    <p class="text-xs text-gray-500">菠菜、西兰花，补充维生素和纤维</p>
-                </div>
-            </div>
-        </div>
-        <div class="nut-panel hidden" data-phase="mid">
-            <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3">
-                <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-2xl mr-3">🥛</div>
-                <div class="flex-1">
-                    <h4 class="font-bold text-gray-800">钙 (1000mg/天)</h4>
-                    <p class="text-xs text-gray-500">牛奶、酸奶、奶酪、虾皮、芝麻</p>
-                </div>
-                <span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-lg font-medium">必吃</span>
-            </div>
-            <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3">
-                <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-2xl mr-3">🥩</div>
-                <div class="flex-1">
-                    <h4 class="font-bold text-gray-800">铁 (预防贫血)</h4>
-                    <p class="text-xs text-gray-500">红肉、动物肝脏、菠菜，搭配维C促进吸收</p>
-                </div>
-                <span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-lg font-medium">必吃</span>
-            </div>
-            <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3">
-                <div class="w-12 h-12 rounded-xl bg-cyan-100 flex items-center justify-center text-2xl mr-3">🐟</div>
-                <div class="flex-1">
-                    <h4 class="font-bold text-gray-800">DHA</h4>
-                    <p class="text-xs text-gray-500">深海鱼（三文鱼、鳕鱼）、核桃、藻类DHA</p>
-                </div>
-            </div>
-            <div class="bg-white rounded-2xl card-shadow p-4 flex items-center">
-                <div class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-2xl mr-3">🍊</div>
-                <div class="flex-1">
-                    <h4 class="font-bold text-gray-800">复合维生素</h4>
-                    <p class="text-xs text-gray-500">多种维生素矿物质，全面补充</p>
-                </div>
-            </div>
-        </div>
-        <div class="nut-panel hidden" data-phase="late">
-            <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3">
-                <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-2xl mr-3">🥩</div>
-                <div class="flex-1">
-                    <h4 class="font-bold text-gray-800">铁 (加量)</h4>
-                    <p class="text-xs text-gray-500">孕晚期血容量增加，需铁量更大</p>
-                </div>
-                <span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-lg font-medium">必吃</span>
-            </div>
-            <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3">
-                <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-2xl mr-3">🥛</div>
-                <div class="flex-1">
-                    <h4 class="font-bold text-gray-800">钙 (1200mg/天)</h4>
-                    <p class="text-xs text-gray-500">胎儿骨骼发育高峰期，钙需求增加</p>
-                </div>
-                <span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-lg font-medium">必吃</span>
-            </div>
-            <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3">
-                <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl mr-3">🌾</div>
-                <div class="flex-1">
-                    <h4 class="font-bold text-gray-800">膳食纤维</h4>
-                    <p class="text-xs text-gray-500">燕麦、红薯、芹菜，预防便秘</p>
-                </div>
-            </div>
-            <div class="bg-white rounded-2xl card-shadow p-4 flex items-center">
-                <div class="w-12 h-12 rounded-xl bg-cyan-100 flex items-center justify-center text-2xl mr-3">🐟</div>
-                <div class="flex-1">
-                    <h4 class="font-bold text-gray-800">DHA (持续)</h4>
-                    <p class="text-xs text-gray-500">促进胎儿大脑和视力发育</p>
-                </div>
-            </div>
-        </div>
+    <div class="nut-panel hidden" data-phase="late">
+      <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3"><div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-2xl mr-3">🥩</div><div class="flex-1"><h4 class="font-bold text-gray-800">铁 (加量)</h4><p class="text-xs text-gray-500">孕晚期血容量增加，需铁量更大</p></div><span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-lg font-medium">必吃</span></div>
+      <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3"><div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-2xl mr-3">🥛</div><div class="flex-1"><h4 class="font-bold text-gray-800">钙 (1200mg/天)</h4><p class="text-xs text-gray-500">胎儿骨骼发育高峰期，钙需求增加</p></div><span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-lg font-medium">必吃</span></div>
+      <div class="bg-white rounded-2xl card-shadow p-4 flex items-center mb-3"><div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl mr-3">🌾</div><div class="flex-1"><h4 class="font-bold text-gray-800">膳食纤维</h4><p class="text-xs text-gray-500">燕麦、红薯、芹菜，预防便秘</p></div></div>
+      <div class="bg-white rounded-2xl card-shadow p-4 flex items-center"><div class="w-12 h-12 rounded-xl bg-cyan-100 flex items-center justify-center text-2xl mr-3">🐟</div><div class="flex-1"><h4 class="font-bold text-gray-800">DHA (持续)</h4><p class="text-xs text-gray-500">促进胎儿大脑和视力发育</p></div></div>
     </div>
+  </div>
 </div>
 
-<!-- 每日食谱 -->
+<!-- 每日食谱 - 按日期轮换 + 昨日饮食 -->
 <div class="px-4 mt-6" id="recipe">
-    <div class="flex justify-between items-center mb-3">
-        <h2 class="font-bold text-gray-800 text-lg"><i class="fas fa-utensils text-amber-500 mr-2"></i>每日食谱推荐</h2>
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="font-bold text-gray-800 text-lg"><i class="fas fa-utensils text-amber-500 mr-2"></i>每日食谱推荐</h2>
+    <span class="text-xs bg-amber-100 text-amber-600 px-2 py-1 rounded-full" id="recipeDayTag">--</span>
+  </div>
+  <div class="flex space-x-3 overflow-x-auto hide-scrollbar pb-2" id="recipeTabs">
+    <button class="recipe-tab active whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchRecipe('breakfast',this)">早餐</button>
+    <button class="recipe-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchRecipe('lunch',this)">午餐</button>
+    <button class="recipe-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchRecipe('dinner',this)">晚餐</button>
+    <button class="recipe-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchRecipe('snack',this)">加餐</button>
+  </div>
+  <div class="mt-3" id="recipeContent"></div>
+
+  <!-- 昨日饮食记录 -->
+  <div class="mt-4 bg-white rounded-2xl card-shadow p-4">
+    <div class="flex items-center mb-3">
+      <span class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mr-2"><i class="fas fa-history"></i></span>
+      <h4 class="font-bold text-gray-800">昨日饮食记录</h4>
     </div>
-    <div class="flex space-x-3 overflow-x-auto hide-scrollbar pb-2" id="recipeTabs">
-        <button class="recipe-tab active whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchRecipe('breakfast',this)">早餐</button>
-        <button class="recipe-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchRecipe('lunch',this)">午餐</button>
-        <button class="recipe-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchRecipe('dinner',this)">晚餐</button>
-        <button class="recipe-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchRecipe('snack',this)">加餐</button>
+    <div id="yesterdayDietDisplay"></div>
+    <div class="mt-3 flex items-center space-x-2">
+      <input type="text" id="yesterdayDietInput" placeholder="例如：早餐牛奶鸡蛋，午餐清蒸鱼..." class="diet-input flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm transition-all">
+      <button onclick="addYesterdayDiet()" class="bg-amber-500 text-white px-4 py-2 rounded-xl text-sm font-medium active:scale-95 transition-transform">保存</button>
     </div>
-    <div class="mt-3" id="recipeContent">
-        <div class="recipe-panel" data-meal="breakfast">
-            <div class="bg-white rounded-2xl card-shadow p-4">
-                <div class="flex items-center mb-3">
-                    <span class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl mr-3">🌅</span>
-                    <div>
-                        <h4 class="font-bold text-gray-800">营养早餐</h4>
-                        <p class="text-xs text-gray-500">约 400-500 大卡</p>
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    <div class="flex items-center bg-amber-50 rounded-lg p-2"><span class="text-lg mr-2">🥛</span><div class="flex-1"><p class="text-sm text-gray-700">牛奶 / 豆浆 250ml</p><p class="text-xs text-gray-400">补充蛋白质和钙</p></div></div>
-                    <div class="flex items-center bg-amber-50 rounded-lg p-2"><span class="text-lg mr-2">🥚</span><div class="flex-1"><p class="text-sm text-gray-700">水煮蛋 1-2个</p><p class="text-xs text-gray-400">优质蛋白 + 胆碱</p></div></div>
-                    <div class="flex items-center bg-amber-50 rounded-lg p-2"><span class="text-lg mr-2">🍞</span><div class="flex-1"><p class="text-sm text-gray-700">全麦面包 / 杂粮粥 1碗</p><p class="text-xs text-gray-400">碳水化合物 + B族维生素</p></div></div>
-                    <div class="flex items-center bg-amber-50 rounded-lg p-2"><span class="text-lg mr-2">🍎</span><div class="flex-1"><p class="text-sm text-gray-700">苹果 / 猕猴桃 1个</p><p class="text-xs text-gray-400">维生素C + 膳食纤维</p></div></div>
-                </div>
-                <div class="mt-3 bg-green-50 rounded-lg p-2 border border-green-200"><p class="text-xs text-green-700"><i class="fas fa-lightbulb mr-1"></i>早餐后记得服用叶酸哦！</p></div>
-            </div>
-        </div>
-        <div class="recipe-panel hidden" data-meal="lunch">
-            <div class="bg-white rounded-2xl card-shadow p-4">
-                <div class="flex items-center mb-3">
-                    <span class="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-xl mr-3">☀️</span>
-                    <div><h4 class="font-bold text-gray-800">丰盛午餐</h4><p class="text-xs text-gray-500">约 600-700 大卡</p></div>
-                </div>
-                <div class="space-y-2">
-                    <div class="flex items-center bg-orange-50 rounded-lg p-2"><span class="text-lg mr-2">🍚</span><div class="flex-1"><p class="text-sm text-gray-700">杂粮饭 / 糙米饭 1碗</p><p class="text-xs text-gray-400">粗细搭配，控制血糖</p></div></div>
-                    <div class="flex items-center bg-orange-50 rounded-lg p-2"><span class="text-lg mr-2">🐟</span><div class="flex-1"><p class="text-sm text-gray-700">清蒸鱼 / 瘦肉 100g</p><p class="text-xs text-gray-400">优质蛋白 + DHA</p></div></div>
-                    <div class="flex items-center bg-orange-50 rounded-lg p-2"><span class="text-lg mr-2">🥬</span><div class="flex-1"><p class="text-sm text-gray-700">清炒时蔬 200g</p><p class="text-xs text-gray-400">菠菜、西兰花、胡萝卜</p></div></div>
-                    <div class="flex items-center bg-orange-50 rounded-lg p-2"><span class="text-lg mr-2">🍲</span><div class="flex-1"><p class="text-sm text-gray-700">番茄蛋汤 / 紫菜汤 1碗</p><p class="text-xs text-gray-400">补水 + 番茄红素</p></div></div>
-                </div>
-                <div class="mt-3 bg-amber-50 rounded-lg p-2 border border-amber-200"><p class="text-xs text-amber-700"><i class="fas fa-exclamation-triangle mr-1"></i>避免生冷、辛辣、油腻食物</p></div>
-            </div>
-        </div>
-        <div class="recipe-panel hidden" data-meal="dinner">
-            <div class="bg-white rounded-2xl card-shadow p-4">
-                <div class="flex items-center mb-3">
-                    <span class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl mr-3">🌙</span>
-                    <div><h4 class="font-bold text-gray-800">清淡晚餐</h4><p class="text-xs text-gray-500">约 500-600 大卡</p></div>
-                </div>
-                <div class="space-y-2">
-                    <div class="flex items-center bg-indigo-50 rounded-lg p-2"><span class="text-lg mr-2">🍜</span><div class="flex-1"><p class="text-sm text-gray-700">小米粥 / 面条 1碗</p><p class="text-xs text-gray-400">易消化，养胃</p></div></div>
-                    <div class="flex items-center bg-indigo-50 rounded-lg p-2"><span class="text-lg mr-2">🍗</span><div class="flex-1"><p class="text-sm text-gray-700">鸡胸肉 / 豆腐 100g</p><p class="text-xs text-gray-400">低脂高蛋白</p></div></div>
-                    <div class="flex items-center bg-indigo-50 rounded-lg p-2"><span class="text-lg mr-2">🥒</span><div class="flex-1"><p class="text-sm text-gray-700">凉拌蔬菜 150g</p><p class="text-xs text-gray-400">黄瓜、木耳、海带</p></div></div>
-                    <div class="flex items-center bg-indigo-50 rounded-lg p-2"><span class="text-lg mr-2">🥛</span><div class="flex-1"><p class="text-sm text-gray-700">温牛奶 200ml</p><p class="text-xs text-gray-400">睡前补钙，助眠</p></div></div>
-                </div>
-                <div class="mt-3 bg-blue-50 rounded-lg p-2 border border-blue-200"><p class="text-xs text-blue-700"><i class="fas fa-moon mr-1"></i>晚餐不宜过饱，睡前2小时不进食</p></div>
-            </div>
-        </div>
-        <div class="recipe-panel hidden" data-meal="snack">
-            <div class="bg-white rounded-2xl card-shadow p-4">
-                <div class="flex items-center mb-3">
-                    <span class="w-10 h-10 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center text-xl mr-3">🍪</span>
-                    <div><h4 class="font-bold text-gray-800">健康加餐</h4><p class="text-xs text-gray-500">约 150-200 大卡</p></div>
-                </div>
-                <div class="space-y-2">
-                    <div class="flex items-center bg-pink-50 rounded-lg p-2"><span class="text-lg mr-2">🥜</span><div class="flex-1"><p class="text-sm text-gray-700">核桃 / 杏仁 一小把</p><p class="text-xs text-gray-400">不饱和脂肪酸 + 维生素E</p></div></div>
-                    <div class="flex items-center bg-pink-50 rounded-lg p-2"><span class="text-lg mr-2">🍌</span><div class="flex-1"><p class="text-sm text-gray-700">香蕉 / 蓝莓 适量</p><p class="text-xs text-gray-400">钾元素 + 抗氧化</p></div></div>
-                    <div class="flex items-center bg-pink-50 rounded-lg p-2"><span class="text-lg mr-2">🥛</span><div class="flex-1"><p class="text-sm text-gray-700">酸奶 1杯 / 豆浆 1杯</p><p class="text-xs text-gray-400">益生菌 + 蛋白质</p></div></div>
-                    <div class="flex items-center bg-pink-50 rounded-lg p-2"><span class="text-lg mr-2">🍠</span><div class="flex-1"><p class="text-sm text-gray-700">蒸红薯 / 玉米 半根</p><p class="text-xs text-gray-400">膳食纤维 + 饱腹感</p></div></div>
-                </div>
-                <div class="mt-3 bg-pink-50 rounded-lg p-2 border border-pink-200"><p class="text-xs text-pink-700"><i class="fas fa-clock mr-1"></i>上午10点、下午3点各加餐一次</p></div>
-            </div>
-        </div>
-    </div>
+  </div>
 </div>
 
 <!-- 体重记录 -->
 <div class="px-4 mt-6" id="weight">
-    <div class="flex justify-between items-center mb-3">
-        <h2 class="font-bold text-gray-800 text-lg"><i class="fas fa-weight text-indigo-500 mr-2"></i>体重记录</h2>
-        <span class="text-xs text-gray-400">孕早期建议增重 1-2kg</span>
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="font-bold text-gray-800 text-lg"><i class="fas fa-weight text-indigo-500 mr-2"></i>体重记录</h2>
+    <span class="text-xs text-gray-400">孕早期建议增重 1-2kg</span>
+  </div>
+  <div class="bg-white rounded-2xl card-shadow p-4">
+    <div class="flex items-center space-x-3 mb-4">
+      <div class="flex-1">
+        <label class="text-xs text-gray-500 block mb-1">今日体重 (kg)</label>
+        <input type="number" id="weightInput" step="0.1" placeholder="例如: 55.5" class="weight-input w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm transition-all">
+      </div>
+      <button onclick="addWeight()" class="bg-pink-500 text-white px-4 py-2 rounded-xl text-sm font-medium mt-5 active:scale-95 transition-transform"><i class="fas fa-plus mr-1"></i>记录</button>
     </div>
-    <div class="bg-white rounded-2xl card-shadow p-4">
-        <div class="flex items-center space-x-3 mb-4">
-            <div class="flex-1">
-                <label class="text-xs text-gray-500 block mb-1">今日体重 (kg)</label>
-                <input type="number" id="weightInput" step="0.1" placeholder="例如: 55.5" class="weight-input w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm transition-all">
-            </div>
-            <button onclick="addWeight()" class="bg-pink-500 text-white px-4 py-2 rounded-xl text-sm font-medium mt-5 active:scale-95 transition-transform"><i class="fas fa-plus mr-1"></i>记录</button>
-        </div>
-        <div class="grid grid-cols-3 gap-2 mb-4">
-            <div class="bg-indigo-50 rounded-xl p-2 text-center"><p class="text-xs text-gray-500">孕前体重</p><p class="text-lg font-bold text-indigo-600" id="preWeight">--</p></div>
-            <div class="bg-pink-50 rounded-xl p-2 text-center"><p class="text-xs text-gray-500">当前体重</p><p class="text-lg font-bold text-pink-600" id="curWeight">--</p></div>
-            <div class="bg-green-50 rounded-xl p-2 text-center"><p class="text-xs text-gray-500">已增重</p><p class="text-lg font-bold text-green-600" id="gainWeight">--</p></div>
-        </div>
-        <div class="border-t pt-3">
-            <div class="flex justify-between items-center mb-2">
-                <h5 class="text-sm font-bold text-gray-700">历史记录</h5>
-                <button onclick="clearWeight()" class="text-xs text-gray-400"><i class="fas fa-trash-alt mr-1"></i>清空</button>
-            </div>
-            <div class="space-y-2 max-h-40 overflow-y-auto hide-scrollbar" id="weightList">
-                <p class="text-xs text-gray-400 text-center py-2">暂无记录，请添加今日体重</p>
-            </div>
-        </div>
-        <div class="border-t pt-3 mt-3">
-            <div class="flex items-center space-x-2">
-                <input type="number" id="preWeightInput" step="0.1" placeholder="孕前体重(kg)" class="weight-input flex-1 border-2 border-gray-200 rounded-xl px-3 py-1.5 text-xs transition-all">
-                <button onclick="setPreWeight()" class="bg-gray-500 text-white px-3 py-1.5 rounded-xl text-xs font-medium active:scale-95 transition-transform">保存</button>
-            </div>
-        </div>
+    <div class="grid grid-cols-3 gap-2 mb-4">
+      <div class="bg-indigo-50 rounded-xl p-2 text-center"><p class="text-xs text-gray-500">孕前体重</p><p class="text-lg font-bold text-indigo-600" id="preWeight">--</p></div>
+      <div class="bg-pink-50 rounded-xl p-2 text-center"><p class="text-xs text-gray-500">当前体重</p><p class="text-lg font-bold text-pink-600" id="curWeight">--</p></div>
+      <div class="bg-green-50 rounded-xl p-2 text-center"><p class="text-xs text-gray-500">已增重</p><p class="text-lg font-bold text-green-600" id="gainWeight">--</p></div>
     </div>
+    <div class="border-t pt-3">
+      <div class="flex justify-between items-center mb-2">
+        <h5 class="text-sm font-bold text-gray-700">历史记录</h5>
+        <button onclick="clearWeight()" class="text-xs text-gray-400"><i class="fas fa-trash-alt mr-1"></i>清空</button>
+      </div>
+      <div class="space-y-2 max-h-40 overflow-y-auto hide-scrollbar" id="weightList">
+        <p class="text-xs text-gray-400 text-center py-2">暂无记录，请添加今日体重</p>
+      </div>
+    </div>
+    <div class="border-t pt-3 mt-3">
+      <div class="flex items-center space-x-2">
+        <input type="number" id="preWeightInput" step="0.1" placeholder="孕前体重(kg)" class="weight-input flex-1 border-2 border-gray-200 rounded-xl px-3 py-1.5 text-xs transition-all">
+        <button onclick="setPreWeight()" class="bg-gray-500 text-white px-3 py-1.5 rounded-xl text-xs font-medium active:scale-95 transition-transform">保存</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- 孕期注意事项 -->
 <div class="px-4 mt-6" id="notes">
-    <div class="flex justify-between items-center mb-3">
-        <h2 class="font-bold text-gray-800 text-lg"><i class="fas fa-clipboard-list text-purple-500 mr-2"></i>孕期注意事项</h2>
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="font-bold text-gray-800 text-lg"><i class="fas fa-clipboard-list text-purple-500 mr-2"></i>孕期注意事项</h2>
+  </div>
+  <div class="space-y-3">
+    <div class="bg-white rounded-2xl card-shadow p-4">
+      <div class="flex items-center mb-2"><span class="w-8 h-8 rounded-full bg-red-100 text-red-500 flex items-center justify-center mr-2"><i class="fas fa-ban"></i></span><h4 class="font-bold text-gray-800">禁止事项</h4></div>
+      <ul class="text-sm text-gray-600 space-y-1 ml-10">
+        <li>• 禁止吸烟、饮酒（包括二手烟）</li><li>• 禁止擅自服用药物，需遵医嘱</li><li>• 避免接触X射线、化学溶剂</li><li>• 避免提重物（>5kg）和剧烈运动</li><li>• 孕早期避免性生活</li>
+      </ul>
     </div>
-    <div class="space-y-3">
-        <div class="bg-white rounded-2xl card-shadow p-4">
-            <div class="flex items-center mb-2">
-                <span class="w-8 h-8 rounded-full bg-red-100 text-red-500 flex items-center justify-center mr-2"><i class="fas fa-ban"></i></span>
-                <h4 class="font-bold text-gray-800">禁止事项</h4>
-            </div>
-            <ul class="text-sm text-gray-600 space-y-1 ml-10">
-                <li>• 禁止吸烟、饮酒（包括二手烟）</li>
-                <li>• 禁止擅自服用药物，需遵医嘱</li>
-                <li>• 避免接触X射线、化学溶剂</li>
-                <li>• 避免提重物（>5kg）和剧烈运动</li>
-                <li>• 孕早期避免性生活</li>
-            </ul>
-        </div>
-        <div class="bg-white rounded-2xl card-shadow p-4">
-            <div class="flex items-center mb-2">
-                <span class="w-8 h-8 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center mr-2"><i class="fas fa-exclamation"></i></span>
-                <h4 class="font-bold text-gray-800">警惕症状（需立即就医）</h4>
-            </div>
-            <ul class="text-sm text-gray-600 space-y-1 ml-10">
-                <li>• 阴道出血或褐色分泌物增多</li>
-                <li>• 剧烈腹痛或持续下腹坠痛</li>
-                <li>• 严重呕吐导致脱水</li>
-                <li>• 头晕、晕厥</li>
-                <li>• 发热超过38°C</li>
-            </ul>
-        </div>
-        <div class="bg-white rounded-2xl card-shadow p-4">
-            <div class="flex items-center mb-2">
-                <span class="w-8 h-8 rounded-full bg-green-100 text-green-500 flex items-center justify-center mr-2"><i class="fas fa-check"></i></span>
-                <h4 class="font-bold text-gray-800">建议做的事</h4>
-            </div>
-            <ul class="text-sm text-gray-600 space-y-1 ml-10">
-                <li>• 保证每天8小时睡眠，适当午休</li>
-                <li>• 保持心情愉悦，减少焦虑</li>
-                <li>• 少食多餐，缓解孕吐</li>
-                <li>• 每天散步20-30分钟（如身体允许）</li>
-                <li>• 穿宽松舒适的衣物和鞋子</li>
-            </ul>
-        </div>
+    <div class="bg-white rounded-2xl card-shadow p-4">
+      <div class="flex items-center mb-2"><span class="w-8 h-8 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center mr-2"><i class="fas fa-exclamation"></i></span><h4 class="font-bold text-gray-800">警惕症状（需立即就医）</h4></div>
+      <ul class="text-sm text-gray-600 space-y-1 ml-10">
+        <li>• 阴道出血或褐色分泌物增多</li><li>• 剧烈腹痛或持续下腹坠痛</li><li>• 严重呕吐导致脱水</li><li>• 头晕、晕厥</li><li>• 发热超过38°C</li>
+      </ul>
     </div>
+    <div class="bg-white rounded-2xl card-shadow p-4">
+      <div class="flex items-center mb-2"><span class="w-8 h-8 rounded-full bg-green-100 text-green-500 flex items-center justify-center mr-2"><i class="fas fa-check"></i></span><h4 class="font-bold text-gray-800">建议做的事</h4></div>
+      <ul class="text-sm text-gray-600 space-y-1 ml-10">
+        <li>• 保证每天8小时睡眠，适当午休</li><li>• 保持心情愉悦，减少焦虑</li><li>• 少食多餐，缓解孕吐</li><li>• 每天散步20-30分钟（如身体允许）</li><li>• 穿宽松舒适的衣物和鞋子</li>
+      </ul>
+    </div>
+  </div>
 </div>
 
 <!-- 宝宝发育里程碑 -->
 <div class="px-4 mt-6 mb-8">
-    <div class="flex justify-between items-center mb-3">
-        <h2 class="font-bold text-gray-800 text-lg"><i class="fas fa-seedling text-green-500 mr-2"></i>宝宝发育里程碑</h2>
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="font-bold text-gray-800 text-lg"><i class="fas fa-seedling text-green-500 mr-2"></i>宝宝发育里程碑</h2>
+  </div>
+  <div class="flex space-x-3 overflow-x-auto hide-scrollbar pb-2" id="devTabs">
+    <button class="dev-tab active whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchDev(4,this)">第4周</button>
+    <button class="dev-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchDev(8,this)">第8周</button>
+    <button class="dev-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchDev(12,this)">第12周</button>
+    <button class="dev-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchDev(20,this)">第20周</button>
+    <button class="dev-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchDev(28,this)">第28周</button>
+    <button class="dev-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchDev(40,this)">第40周</button>
+  </div>
+  <div class="mt-3 bg-white rounded-2xl card-shadow p-4" id="devContent">
+    <div class="dev-panel" data-week="4">
+      <div class="flex items-center mb-3"><span class="text-4xl mr-3">🫘</span><div><h4 class="font-bold text-gray-800">第4周 - 小芝麻籽</h4><p class="text-xs text-gray-500">身长约 2-4mm</p></div></div>
+      <div class="bg-pink-50 rounded-xl p-3 text-sm text-gray-700 space-y-1"><p>• 受精卵已着床在子宫内膜</p><p>• 胚胎由两层细胞组成，将来分化成各个器官</p><p>• 羊水开始积累，保护胚胎</p><p>• 母体可能出现轻微出血（着床出血）</p></div>
     </div>
-    <div class="flex space-x-3 overflow-x-auto hide-scrollbar pb-2" id="devTabs">
-        <button class="dev-tab active whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchDev(4,this)">第4周</button>
-        <button class="dev-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchDev(8,this)">第8周</button>
-        <button class="dev-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchDev(12,this)">第12周</button>
-        <button class="dev-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchDev(20,this)">第20周</button>
-        <button class="dev-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchDev(28,this)">第28周</button>
-        <button class="dev-tab whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all" onclick="switchDev(40,this)">第40周</button>
+    <div class="dev-panel hidden" data-week="8">
+      <div class="flex items-center mb-3"><span class="text-4xl mr-3">🫐</span><div><h4 class="font-bold text-gray-800">第8周 - 小蓝莓</h4><p class="text-xs text-gray-500">身长约 16-20mm</p></div></div>
+      <div class="bg-pink-50 rounded-xl p-3 text-sm text-gray-700 space-y-1"><p>• 主要器官开始形成：心脏、脑、肺、肝、肾</p><p>• 手指和脚趾开始发育</p><p>• 心脏开始跳动，B超可见胎心</p><p>• 面部特征开始显现</p></div>
     </div>
-    <div class="mt-3 bg-white rounded-2xl card-shadow p-4" id="devContent">
-        <div class="dev-panel" data-week="4">
-            <div class="flex items-center mb-3">
-                <span class="text-4xl mr-3">🫘</span>
-                <div><h4 class="font-bold text-gray-800">第4周 - 小芝麻籽</h4><p class="text-xs text-gray-500">身长约 2-4mm</p></div>
-            </div>
-            <div class="bg-pink-50 rounded-xl p-3 text-sm text-gray-700 space-y-1">
-                <p>• 受精卵已着床在子宫内膜</p>
-                <p>• 胚胎由两层细胞组成，将来分化成各个器官</p>
-                <p>• 羊水开始积累，保护胚胎</p>
-                <p>• 母体可能出现轻微出血（着床出血）</p>
-            </div>
-        </div>
-        <div class="dev-panel hidden" data-week="8">
-            <div class="flex items-center mb-3">
-                <span class="text-4xl mr-3">🫐</span>
-                <div><h4 class="font-bold text-gray-800">第8周 - 小蓝莓</h4><p class="text-xs text-gray-500">身长约 16-20mm</p></div>
-            </div>
-            <div class="bg-pink-50 rounded-xl p-3 text-sm text-gray-700 space-y-1">
-                <p>• 主要器官开始形成：心脏、脑、肺、肝、肾</p>
-                <p>• 手指和脚趾开始发育</p>
-                <p>• 心脏开始跳动，B超可见胎心</p>
-                <p>• 面部特征开始显现</p>
-            </div>
-        </div>
-        <div class="dev-panel hidden" data-week="12">
-            <div class="flex items-center mb-3">
-                <span class="text-4xl mr-3">🍋</span>
-                <div><h4 class="font-bold text-gray-800">第12周 - 小柠檬</h4><p class="text-xs text-gray-500">身长约 5-6cm，重约 14g</p></div>
-            </div>
-            <div class="bg-pink-50 rounded-xl p-3 text-sm text-gray-700 space-y-1">
-                <p>• 所有主要器官已形成</p>
-                <p>• 开始吞咽和踢腿</p>
-                <p>• 手指可以张开和合拢</p>
-                <p>• 外生殖器开始发育</p>
-            </div>
-        </div>
-        <div class="dev-panel hidden" data-week="20">
-            <div class="flex items-center mb-3">
-                <span class="text-4xl mr-3">🍌</span>
-                <div><h4 class="font-bold text-gray-800">第20周 - 小香蕉</h4><p class="text-xs text-gray-500">身长约 16cm，重约 300g</p></div>
-            </div>
-            <div class="bg-pink-50 rounded-xl p-3 text-sm text-gray-700 space-y-1">
-                <p>• 可以感受到胎动（像蝴蝶扇翅膀）</p>
-                <p>• 头发、眉毛、睫毛开始生长</p>
-                <p>• 皮肤开始分泌胎脂</p>
-                <p>• 听觉开始发育，能听见妈妈的声音</p>
-            </div>
-        </div>
-        <div class="dev-panel hidden" data-week="28">
-            <div class="flex items-center mb-3">
-                <span class="text-4xl mr-3">🥬</span>
-                <div><h4 class="font-bold text-gray-800">第28周 - 大白菜</h4><p class="text-xs text-gray-500">身长约 35cm，重约 1000g</p></div>
-            </div>
-            <div class="bg-pink-50 rounded-xl p-3 text-sm text-gray-700 space-y-1">
-                <p>• 眼睛可以睁开和闭合</p>
-                <p>• 开始练习呼吸动作</p>
-                <p>• 大脑发育迅速，出现睡眠周期</p>
-                <p>• 如果早产，存活率较高</p>
-            </div>
-        </div>
-        <div class="dev-panel hidden" data-week="40">
-            <div class="flex items-center mb-3">
-                <span class="text-4xl mr-3">🍉</span>
-                <div><h4 class="font-bold text-gray-800">第40周 - 大西瓜</h4><p class="text-xs text-gray-500">身长约 50cm，重约 3200-3500g</p></div>
-            </div>
-            <div class="bg-pink-50 rounded-xl p-3 text-sm text-gray-700 space-y-1">
-                <p>• 胎儿已完全发育成熟</p>
-                <p>• 肺部已准备好呼吸</p>
-                <p>• 头部已入盆（大部分情况）</p>
-                <p>• 随时可能发动，准备好待产包！</p>
-            </div>
-        </div>
+    <div class="dev-panel hidden" data-week="12">
+      <div class="flex items-center mb-3"><span class="text-4xl mr-3">🍋</span><div><h4 class="font-bold text-gray-800">第12周 - 小柠檬</h4><p class="text-xs text-gray-500">身长约 5-6cm，重约 14g</p></div></div>
+      <div class="bg-pink-50 rounded-xl p-3 text-sm text-gray-700 space-y-1"><p>• 所有主要器官已形成</p><p>• 开始吞咽和踢腿</p><p>• 手指可以张开和合拢</p><p>• 外生殖器开始发育</p></div>
     </div>
+    <div class="dev-panel hidden" data-week="20">
+      <div class="flex items-center mb-3"><span class="text-4xl mr-3">🍌</span><div><h4 class="font-bold text-gray-800">第20周 - 小香蕉</h4><p class="text-xs text-gray-500">身长约 16cm，重约 300g</p></div></div>
+      <div class="bg-pink-50 rounded-xl p-3 text-sm text-gray-700 space-y-1"><p>• 可以感受到胎动（像蝴蝶扇翅膀）</p><p>• 头发、眉毛、睫毛开始生长</p><p>• 皮肤开始分泌胎脂</p><p>• 听觉开始发育，能听见妈妈的声音</p></div>
+    </div>
+    <div class="dev-panel hidden" data-week="28">
+      <div class="flex items-center mb-3"><span class="text-4xl mr-3">🥬</span><div><h4 class="font-bold text-gray-800">第28周 - 大白菜</h4><p class="text-xs text-gray-500">身长约 35cm，重约 1000g</p></div></div>
+      <div class="bg-pink-50 rounded-xl p-3 text-sm text-gray-700 space-y-1"><p>• 眼睛可以睁开和闭合</p><p>• 开始练习呼吸动作</p><p>• 大脑发育迅速，出现睡眠周期</p><p>• 如果早产，存活率较高</p></div>
+    </div>
+    <div class="dev-panel hidden" data-week="40">
+      <div class="flex items-center mb-3"><span class="text-4xl mr-3">🍉</span><div><h4 class="font-bold text-gray-800">第40周 - 大西瓜</h4><p class="text-xs text-gray-500">身长约 50cm，重约 3200-3500g</p></div></div>
+      <div class="bg-pink-50 rounded-xl p-3 text-sm text-gray-700 space-y-1"><p>• 胎儿已完全发育成熟</p><p>• 肺部已准备好呼吸</p><p>• 头部已入盆（大部分情况）</p><p>• 随时可能发动，准备好待产包！</p></div>
+    </div>
+  </div>
 </div>
 
 <!-- 底部导航 -->
 <div class="fixed bottom-0 left-0 right-0 glass border-t border-gray-200 z-50">
-    <div class="flex justify-around py-2">
-        <button class="nav-btn flex flex-col items-center py-1 px-4 text-pink-600 border-b-2 border-pink-600" onclick="scrollTo('top')">
-            <i class="fas fa-home text-lg"></i><span class="text-xs mt-0.5">首页</span>
-        </button>
-        <button class="nav-btn flex flex-col items-center py-1 px-4 text-gray-400" onclick="scrollTo('checkup')">
-            <i class="fas fa-calendar-check text-lg"></i><span class="text-xs mt-0.5">产检</span>
-        </button>
-        <button class="nav-btn flex flex-col items-center py-1 px-4 text-gray-400" onclick="scrollTo('nutrition')">
-            <i class="fas fa-carrot text-lg"></i><span class="text-xs mt-0.5">营养</span>
-        </button>
-        <button class="nav-btn flex flex-col items-center py-1 px-4 text-gray-400" onclick="scrollTo('notes')">
-            <i class="fas fa-book-medical text-lg"></i><span class="text-xs mt-0.5">须知</span>
-        </button>
-    </div>
-</div>
-
-<!-- 报告记录模态框 -->
-<div id="reportModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-end" onclick="if(event.target===this)this.classList.add('hidden')">
-    <div class="bg-white rounded-t-3xl w-full max-h-[80vh] overflow-y-auto">
-        <div class="sticky top-0 bg-white rounded-t-3xl p-4 border-b flex justify-between items-center">
-            <h3 class="font-bold text-lg">检验报告记录</h3>
-            <button onclick="document.getElementById('reportModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"><i class="fas fa-times text-gray-500"></i></button>
-        </div>
-        <div class="p-4 space-y-4">
-            <div class="bg-pink-50 rounded-2xl p-4 border border-pink-200">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="font-bold text-gray-800">第一次抽血检查</span>
-                    <span class="text-xs text-gray-500">2026-08-21</span>
-                </div>
-                <div class="grid grid-cols-2 gap-2 text-sm">
-                    <div class="bg-white rounded-lg p-2"><span class="text-gray-500">孕酮</span><p class="font-semibold">14.03 ng/mL</p></div>
-                    <div class="bg-white rounded-lg p-2"><span class="text-gray-500">HCG</span><p class="font-semibold">850.07 mIU/mL</p></div>
-                </div>
-                <p class="text-xs text-amber-700 mt-2"><i class="fas fa-info-circle mr-1"></i>孕酮偏低，已建议补充黄体酮</p>
-            </div>
-            <div class="bg-gray-50 rounded-2xl p-4 border border-dashed border-gray-300 text-center">
-                <i class="fas fa-plus-circle text-3xl text-gray-300 mb-2"></i>
-                <p class="text-sm text-gray-500">下次检查后将自动添加记录</p>
-                <p class="text-xs text-gray-400 mt-1">建议1周后复查HCG翻倍情况</p>
-            </div>
-        </div>
-    </div>
+  <div class="flex justify-around py-2">
+    <button class="nav-btn flex flex-col items-center py-1 px-4 text-pink-600 border-b-2 border-pink-600" onclick="scrollTo('top')"><i class="fas fa-home text-lg"></i><span class="text-xs mt-0.5">首页</span></button>
+    <button class="nav-btn flex flex-col items-center py-1 px-4 text-gray-400" onclick="scrollTo('checkup')"><i class="fas fa-calendar-check text-lg"></i><span class="text-xs mt-0.5">产检</span></button>
+    <button class="nav-btn flex flex-col items-center py-1 px-4 text-gray-400" onclick="scrollTo('nutrition')"><i class="fas fa-carrot text-lg"></i><span class="text-xs mt-0.5">营养</span></button>
+    <button class="nav-btn flex flex-col items-center py-1 px-4 text-gray-400" onclick="scrollTo('notes')"><i class="fas fa-book-medical text-lg"></i><span class="text-xs mt-0.5">须知</span></button>
+  </div>
 </div>
 
 <script>
-function scrollTo(id) {
-    if (id === 'top') window.scrollTo({top:0, behavior:'smooth'});
-    else document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
-}
-function showReportModal() {
-    document.getElementById('reportModal').classList.remove('hidden');
-}
-function toggleCheck(el) {
-    el.classList.toggle('checked');
-    updateProgress();
-}
-function updateProgress() {
-    const items = document.querySelectorAll('.check-item');
-    const checked = document.querySelectorAll('.check-item.checked');
-    document.getElementById('todoProgress').textContent = checked.length + '/' + items.length + ' 完成';
-}
-function switchNut(phase, btn) {
-    document.querySelectorAll('.nut-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.nut-panel').forEach(p => {
-        p.classList.add('hidden');
-        if (p.dataset.phase === phase) p.classList.remove('hidden');
-    });
-}
-function switchRecipe(meal, btn) {
-    document.querySelectorAll('.recipe-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.recipe-panel').forEach(p => {
-        p.classList.add('hidden');
-        if (p.dataset.meal === meal) p.classList.remove('hidden');
-    });
-}
-function switchDev(week, btn) {
-    document.querySelectorAll('.dev-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.dev-panel').forEach(p => {
-        p.classList.add('hidden');
-        if (parseInt(p.dataset.week) === week) p.classList.remove('hidden');
-    });
-}
+// ========== 基础配置 ==========
+const LMP_DATE = '2026-07-21';
+const DUE_DATE = '2027-04-27';
+const REPORT_KEY = 'pregnancy_reports_v2';
 const WEIGHT_KEY = 'pregnancy_weight_records';
 const PRE_WEIGHT_KEY = 'pregnancy_pre_weight';
+const DIET_KEY = 'pregnancy_diet_records';
+
+// ========== 1. 自动日期和孕周计算 ==========
+function updateDateInfo() {
+  const today = new Date();
+  const lmp = new Date(LMP_DATE);
+  const due = new Date(DUE_DATE);
+  
+  document.getElementById('todayDate').textContent = 
+    today.toLocaleDateString('zh-CN', {year:'numeric', month:'long', day:'numeric', weekday:'long'});
+  
+  const diffTime = today - lmp;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const weeks = Math.floor(diffDays / 7);
+  const days = diffDays % 7;
+  
+  document.getElementById('currentWeek').textContent = weeks;
+  document.getElementById('currentDay').textContent = days;
+  
+  const dueDiff = due - today;
+  const dueDays = Math.ceil(dueDiff / (1000 * 60 * 60 * 24));
+  document.getElementById('daysLeft').innerHTML = dueDays + '<span class="text-sm font-normal">天</span>';
+  document.getElementById('dueDate').textContent = DUE_DATE;
+  
+  let phase = '';
+  if (weeks <= 12) phase = '孕早期';
+  else if (weeks <= 28) phase = '孕中期';
+  else phase = '孕晚期';
+  document.getElementById('pregnancyPhase').innerHTML = '<i class="fas fa-heart mr-1"></i>' + phase;
+  
+  const progress = (diffDays / 280) * 377;
+  document.getElementById('progressCircle').setAttribute('stroke-dashoffset', 377 - progress);
+  
+  updateBabySize(weeks);
+}
+
+function updateBabySize(weeks) {
+  const sizes = [
+    {w:4, e:'🫘', n:'小芝麻籽', l:'身长约 2-4mm'},
+    {w:8, e:'🫐', n:'小蓝莓', l:'身长约 16-20mm'},
+    {w:12, e:'🍋', n:'小柠檬', l:'身长约 5-6cm'},
+    {w:16, e:'🥑', n:'小牛油果', l:'身长约 12cm'},
+    {w:20, e:'🍌', n:'小香蕉', l:'身长约 16cm'},
+    {w:24, e:'🌽', n:'小玉米', l:'身长约 30cm'},
+    {w:28, e:'🥬', n:'大白菜', l:'身长约 35cm'},
+    {w:32, e:'🥥', n:'椰子', l:'身长约 42cm'},
+    {w:36, e:'🍈', n:'哈密瓜', l:'身长约 47cm'},
+    {w:40, e:'🍉', n:'大西瓜', l:'身长约 50cm'}
+  ];
+  let s = sizes[0];
+  for (let i = sizes.length - 1; i >= 0; i--) {
+    if (weeks >= sizes[i].w) { s = sizes[i]; break; }
+  }
+  document.getElementById('babyEmoji').textContent = s.e;
+  document.getElementById('babySize').textContent = s.n;
+  document.getElementById('babyLength').textContent = s.l;
+}
+
+// ========== 2. 检验报告历史对比 ==========
+function getReports() {
+  try { return JSON.parse(localStorage.getItem(REPORT_KEY)) || []; }
+  catch(e) { return []; }
+}
+function saveReports(reports) {
+  localStorage.setItem(REPORT_KEY, JSON.stringify(reports));
+}
+function initReports() {
+  let reports = getReports();
+  if (reports.length === 0) {
+    reports = [{
+      date: '2026-08-21',
+      progesterone: 14.03,
+      hcg: 850.07,
+      tip: '孕酮值在正常范围内但偏低，建议遵医嘱补充黄体酮，1周后复查HCG翻倍情况和孕酮水平。'
+    }];
+    saveReports(reports);
+  }
+  return reports;
+}
+function renderReports() {
+  const reports = initReports();
+  const container = document.getElementById('reportCompare');
+  if (reports.length === 0) {
+    container.innerHTML = '<p class="text-xs text-gray-400">暂无报告记录</p>';
+    return;
+  }
+  const latest = reports[reports.length - 1];
+  document.getElementById('latestReportDate').textContent = latest.date;
+  document.getElementById('reportTip').innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i><strong>温馨提示：</strong>' + latest.tip;
+  
+  let html = '<div class="grid grid-cols-2 gap-3">';
+  html += '<div class="bg-pink-50 rounded-xl p-3"><p class="text-xs text-gray-500">孕酮</p><p class="text-lg font-bold text-gray-800">' + latest.progesterone + ' <span class="text-xs font-normal">ng/mL</span></p>';
+  if (reports.length >= 2) {
+    const prev = reports[reports.length - 2];
+    const diff = (latest.progesterone - prev.progesterone).toFixed(2);
+    const color = diff >= 0 ? 'text-green-600' : 'text-red-500';
+    const arrow = diff >= 0 ? '↑' : '↓';
+    html += '<p class="text-xs ' + color + '">上一次 ' + prev.progesterone + ' ' + arrow + ' ' + Math.abs(diff) + '</p>';
+  } else {
+    html += '<span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">正常偏低</span>';
+  }
+  html += '</div>';
+  
+  html += '<div class="bg-pink-50 rounded-xl p-3"><p class="text-xs text-gray-500">HCG</p><p class="text-lg font-bold text-gray-800">' + latest.hcg + ' <span class="text-xs font-normal">mIU/mL</span></p>';
+  if (reports.length >= 2) {
+    const prev = reports[reports.length - 2];
+    const ratio = (latest.hcg / prev.hcg).toFixed(1);
+    html += '<p class="text-xs text-green-600">较上次 ' + ratio + ' 倍</p>';
+  } else {
+    html += '<span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">正常</span>';
+  }
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+// ========== 3. 体重记录（数据不丢） ==========
 function getWeightRecords() {
-    try { return JSON.parse(localStorage.getItem(WEIGHT_KEY)) || []; }
-    catch(e) { return []; }
+  try { return JSON.parse(localStorage.getItem(WEIGHT_KEY)) || []; }
+  catch(e) { return []; }
 }
 function saveWeightRecords(records) {
-    localStorage.setItem(WEIGHT_KEY, JSON.stringify(records));
+  localStorage.setItem(WEIGHT_KEY, JSON.stringify(records));
 }
 function getPreWeight() {
-    const w = localStorage.getItem(PRE_WEIGHT_KEY);
-    return w ? parseFloat(w) : null;
+  const w = localStorage.getItem(PRE_WEIGHT_KEY);
+  return w ? parseFloat(w) : null;
 }
 function setPreWeight() {
-    const input = document.getElementById('preWeightInput');
-    const val = parseFloat(input.value);
-    if (!val || val <= 0) { alert('请输入有效的孕前体重'); return; }
-    localStorage.setItem(PRE_WEIGHT_KEY, val);
-    input.value = '';
-    renderWeight();
+  const input = document.getElementById('preWeightInput');
+  const val = parseFloat(input.value);
+  if (!val || val <= 0) { alert('请输入有效的孕前体重'); return; }
+  localStorage.setItem(PRE_WEIGHT_KEY, val);
+  input.value = '';
+  renderWeight();
 }
 function addWeight() {
-    const input = document.getElementById('weightInput');
-    const val = parseFloat(input.value);
-    if (!val || val <= 0) { alert('请输入有效的体重'); return; }
-    const records = getWeightRecords();
-    const today = new Date().toISOString().split('T')[0];
-    const idx = records.findIndex(r => r.date === today);
-    if (idx >= 0) records[idx].weight = val;
-    else records.push({ date: today, weight: val });
-    records.sort((a,b) => a.date.localeCompare(b.date));
-    saveWeightRecords(records);
-    input.value = '';
-    renderWeight();
+  const input = document.getElementById('weightInput');
+  const val = parseFloat(input.value);
+  if (!val || val <= 0) { alert('请输入有效的体重'); return; }
+  const records = getWeightRecords();
+  const today = new Date().toISOString().split('T')[0];
+  const idx = records.findIndex(r => r.date === today);
+  if (idx >= 0) records[idx].weight = val;
+  else records.push({ date: today, weight: val });
+  records.sort((a,b) => a.date.localeCompare(b.date));
+  saveWeightRecords(records);
+  input.value = '';
+  renderWeight();
 }
 function clearWeight() {
-    if (!confirm('确定要清空所有体重记录吗？')) return;
-    localStorage.removeItem(WEIGHT_KEY);
-    renderWeight();
+  if (!confirm('确定要清空所有体重记录吗？')) return;
+  localStorage.removeItem(WEIGHT_KEY);
+  renderWeight();
 }
 function renderWeight() {
-    const records = getWeightRecords();
-    const preWeight = getPreWeight();
-    const listEl = document.getElementById('weightList');
-    const preEl = document.getElementById('preWeight');
-    const curEl = document.getElementById('curWeight');
-    const gainEl = document.getElementById('gainWeight');
-    preEl.textContent = preWeight ? preWeight.toFixed(1) : '--';
-    if (records.length === 0) {
-        listEl.innerHTML = '<p class=\"text-xs text-gray-400 text-center py-2\">暂无记录，请添加今日体重</p>';
-        curEl.textContent = '--';
-        gainEl.textContent = '--';
-        return;
-    }
-    const latest = records[records.length - 1];
-    curEl.textContent = latest.weight.toFixed(1);
+  const records = getWeightRecords();
+  const preWeight = getPreWeight();
+  document.getElementById('preWeight').textContent = preWeight ? preWeight.toFixed(1) : '--';
+  if (records.length === 0) {
+    document.getElementById('weightList').innerHTML = '<p class="text-xs text-gray-400 text-center py-2">暂无记录，请添加今日体重</p>';
+    document.getElementById('curWeight').textContent = '--';
+    document.getElementById('gainWeight').textContent = '--';
+    return;
+  }
+  const latest = records[records.length - 1];
+  document.getElementById('curWeight').textContent = latest.weight.toFixed(1);
+  if (preWeight) {
+    const gain = latest.weight - preWeight;
+    document.getElementById('gainWeight').textContent = (gain >= 0 ? '+' : '') + gain.toFixed(1) + 'kg';
+    document.getElementById('gainWeight').className = 'text-lg font-bold ' + (gain > 2 ? 'text-amber-600' : 'text-green-600');
+  } else {
+    document.getElementById('gainWeight').textContent = '--';
+  }
+  document.getElementById('weightList').innerHTML = records.slice().reverse().map(r => {
+    const d = new Date(r.date);
+    const ds = (d.getMonth()+1) + '月' + d.getDate() + '日';
+    let diffStr = '';
     if (preWeight) {
-        const gain = latest.weight - preWeight;
-        gainEl.textContent = (gain >= 0 ? '+' : '') + gain.toFixed(1) + 'kg';
-        gainEl.className = 'text-lg font-bold ' + (gain > 2 ? 'text-amber-600' : 'text-green-600');
-    } else {
-        gainEl.textContent = '--';
+      const diff = r.weight - preWeight;
+      diffStr = '<span class="text-xs ' + (diff > 2 ? 'text-amber-500' : 'text-green-500') + '">' + (diff >= 0 ? '+' : '') + diff.toFixed(1) + 'kg</span>';
     }
-    listEl.innerHTML = records.slice().reverse().map(r => {
-        const dateObj = new Date(r.date);
-        const dateStr = dateObj.getMonth() + 1 + '月' + dateObj.getDate() + '日';
-        let diffStr = '';
-        if (preWeight) {
-            const diff = r.weight - preWeight;
-            diffStr = '<span class=\"text-xs ' + (diff > 2 ? 'text-amber-500' : 'text-green-500') + '\">' + (diff >= 0 ? '+' : '') + diff.toFixed(1) + 'kg</span>';
-        }
-        return '<div class=\"flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2\">' +
-            '<span class=\"text-xs text-gray-600\">' + dateStr + '</span>' +
-            '<div class=\"flex items-center gap-2\">' + diffStr +
-            '<span class=\"text-sm font-bold text-gray-800\">' + r.weight.toFixed(1) + 'kg</span></div></div>';
-    }).join('');
+    return '<div class="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2"><span class="text-xs text-gray-600">' + ds + '</span><div class="flex items-center gap-2">' + diffStr + '<span class="text-sm font-bold text-gray-800">' + r.weight.toFixed(1) + 'kg</span></div></div>';
+  }).join('');
 }
+
+// ========== 4. 食谱按日期轮换 ==========
+const RECIPE_SETS = [
+  { breakfast:{icon:'🌅',title:'营养早餐',cal:'400-500',items:[{e:'🥛',n:'牛奶 / 豆浆 250ml',d:'补充蛋白质和钙'},{e:'🥚',n:'水煮蛋 1-2个',d:'优质蛋白 + 胆碱'},{e:'🍞',n:'全麦面包 / 杂粮粥 1碗',d:'碳水化合物 + B族维生素'},{e:'🍎',n:'苹果 / 猕猴桃 1个',d:'维生素C + 膳食纤维'}],tip:'早餐后记得服用叶酸哦！'},
+    lunch:{icon:'☀️',title:'丰盛午餐',cal:'600-700',items:[{e:'🍚',n:'杂粮饭 / 糙米饭 1碗',d:'粗细搭配，控制血糖'},{e:'🐟',n:'清蒸鱼 / 瘦肉 100g',d:'优质蛋白 + DHA'},{e:'🥬',n:'清炒时蔬 200g',d:'菠菜、西兰花、胡萝卜'},{e:'🍲',n:'番茄蛋汤 / 紫菜汤 1碗',d:'补水 + 番茄红素'}],tip:'避免生冷、辛辣、油腻食物'},
+    dinner:{icon:'🌙',title:'清淡晚餐',cal:'500-600',items:[{e:'🍜',n:'小米粥 / 面条 1碗',d:'易消化，养胃'},{e:'🍗',n:'鸡胸肉 / 豆腐 100g',d:'低脂高蛋白'},{e:'🥒',n:'凉拌蔬菜 150g',d:'黄瓜、木耳、海带'},{e:'🥛',n:'温牛奶 200ml',d:'睡前补钙，助眠'}],tip:'晚餐不宜过饱，睡前2小时不进食'},
+    snack:{icon:'🍪',title:'健康加餐',cal:'150-200',items:[{e:'🥜',n:'核桃 / 杏仁 一小把',d:'不饱和脂肪酸 + 维生素E'},{e:'🍌',n:'香蕉 / 蓝莓 适量',d:'钾元素 + 抗氧化'},{e:'🥛',n:'酸奶 1杯 / 豆浆 1杯',d:'益生菌 + 蛋白质'},{e:'🍠',n:'蒸红薯 / 玉米 半根',d:'膳食纤维 + 饱腹感'}],tip:'上午10点、下午3点各加餐一次'} },
+  { breakfast:{icon:'🌅',title:'营养早餐',cal:'400-500',items:[{e:'🥛',n:'温牛奶 250ml',d:'补钙助眠'},{e:'🥪',n:'全麦三明治 1份',d:'鸡蛋+生菜+番茄'},{e:'🍊',n:'橙子 1个',d:'维生素C丰富'},{e:'🥜',n:'核桃 2-3颗',d:'补充DHA'}],tip:'早餐后记得服用叶酸哦！'},
+    lunch:{icon:'☀️',title:'丰盛午餐',cal:'600-700',items:[{e:'🍚',n:'红薯米饭 1碗',d:'粗粮搭配'},{e:'🍤',n:'白灼虾 100g',d:'高蛋白低脂肪'},{e:'🥦',n:'蒜蓉西兰花 200g',d:'叶酸丰富'},{e:'🍄',n:'香菇鸡汤 1碗',d:'增强免疫力'}],tip:'避免生冷、辛辣、油腻食物'},
+    dinner:{icon:'🌙',title:'清淡晚餐',cal:'500-600',items:[{e:'🍲',n:'蔬菜瘦肉粥 1碗',d:'易消化'},{e:'🥚',n:'蒸蛋羹 1碗',d:'优质蛋白'},{e:'🥕',n:'凉拌胡萝卜丝',d:'维生素A丰富'},{e:'🥛',n:'温牛奶 200ml',d:'补钙助眠'}],tip:'晚餐不宜过饱，睡前2小时不进食'},
+    snack:{icon:'🍪',title:'健康加餐',cal:'150-200',items:[{e:'🫐',n:'蓝莓 一小盒',d:'抗氧化'},{e:'🥛',n:'无糖酸奶 1杯',d:'益生菌'},{e:'🍞',n:'全麦饼干 2片',d:'缓解饥饿'},{e:'🍎',n:'苹果 半个',d:'膳食纤维'}],tip:'上午10点、下午3点各加餐一次'} },
+  { breakfast:{icon:'🌅',title:'营养早餐',cal:'400-500',items:[{e:'🥣',n:'燕麦牛奶粥 1碗',d:'膳食纤维+钙'},{e:'🥚',n:'茶叶蛋 1个',d:'优质蛋白'},{e:'🍞',n:'全麦馒头 1个',d:'碳水化合物'},{e:'🍇',n:'葡萄 10颗',d:'补铁抗氧化'}],tip:'早餐后记得服用叶酸哦！'},
+    lunch:{icon:'☀️',title:'丰盛午餐',cal:'600-700',items:[{e:'🍚',n:'紫米饭 1碗',d:'花青素丰富'},{e:'🐟',n:'清蒸鲈鱼 100g',d:'DHA丰富'},{e:'🥬',n:'上汤娃娃菜 200g',d:'清淡爽口'},{e:'🍅',n:'番茄蛋汤 1碗',d:'番茄红素'}],tip:'避免生冷、辛辣、油腻食物'},
+    dinner:{icon:'🌙',title:'清淡晚餐',cal:'500-600',items:[{e:'🍜',n:'南瓜小米粥 1碗',d:'养胃健脾'},{e:'🍗',n:'蒸鸡腿肉 100g',d:'去皮低脂'},{e:'🥗',n:'凉拌黄瓜 150g',d:'清爽解腻'},{e:'🥛',n:'温牛奶 200ml',d:'补钙助眠'}],tip:'晚餐不宜过饱，睡前2小时不进食'},
+    snack:{icon:'🍪',title:'健康加餐',cal:'150-200',items:[{e:'🥜',n:'混合坚果 1小把',d:'不饱和脂肪酸'},{e:'🍌',n:'香蕉 1根',d:'缓解便秘'},{e:'🥛',n:'豆浆 1杯',d:'植物蛋白'},{e:'🍪',n:'苏打饼干 2片',d:'缓解孕吐'}],tip:'上午10点、下午3点各加餐一次'} },
+  { breakfast:{icon:'🌅',title:'营养早餐',cal:'400-500',items:[{e:'🥛',n:'黑芝麻糊 1碗',d:'补钙乌发'},{e:'🥟',n:'蒸饺 4-5个',d:'荤素搭配'},{e:'🥚',n:'水煮蛋 1个',d:'优质蛋白'},{e:'🍎',n:'苹果 1个',d:'膳食纤维'}],tip:'早餐后记得服用叶酸哦！'},
+    lunch:{icon:'☀️',title:'丰盛午餐',cal:'600-700',items:[{e:'🍚',n:'玉米饭 1碗',d:'粗粮搭配'},{e:'🥩',n:'红烧牛肉 100g',d:'补铁补血'},{e:'🥬',n:'清炒油麦菜 200g',d:'绿叶蔬菜'},{e:'🍲',n:'冬瓜虾皮汤 1碗',d:'补钙消肿'}],tip:'避免生冷、辛辣、油腻食物'},
+    dinner:{icon:'🌙',title:'清淡晚餐',cal:'500-600',items:[{e:'🍜',n:'山药排骨粥 1碗',d:'健脾养胃'},{e:'🥚',n:'水蒸蛋 1碗',d:'易消化蛋白'},{e:'🥕',n:'清炒莴笋 150g',d:'叶酸丰富'},{e:'🥛',n:'温牛奶 200ml',d:'补钙助眠'}],tip:'晚餐不宜过饱，睡前2小时不进食'},
+    snack:{icon:'🍪',title:'健康加餐',cal:'150-200',items:[{e:'🫐',n:'草莓 5-6颗',d:'维生素C'},{e:'🥛',n:'酸奶 1杯',d:'益生菌'},{e:'🍞',n:'全麦面包 1小片',d:'缓解饥饿'},{e:'🥜',n:'杏仁 5-6颗',d:'维生素E'}],tip:'上午10点、下午3点各加餐一次'} },
+  { breakfast:{icon:'🌅',title:'营养早餐',cal:'400-500',items:[{e:'🥣',n:'红豆薏米粥 1碗',d:'祛湿健脾'},{e:'🥚',n:'荷包蛋 1个',d:'优质蛋白'},{e:'🍞',n:'全麦馒头 1个',d:'碳水化合物'},{e:'🍊',n:'柚子 2瓣',d:'维生素C'}],tip:'早餐后记得服用叶酸哦！'},
+    lunch:{icon:'☀️',title:'丰盛午餐',cal:'600-700',items:[{e:'🍚',n:'藜麦饭 1碗',d:'高蛋白粗粮'},{e:'🐟',n:'清蒸带鱼 100g',d:'DHA丰富'},{e:'🥬',n:'白灼菜心 200g',d:'清淡爽口'},{e:'🍲',n:'紫菜蛋花汤 1碗',d:'补碘'}],tip:'避免生冷、辛辣、油腻食物'},
+    dinner:{icon:'🌙',title:'清淡晚餐',cal:'500-600',items:[{e:'🍜',n:'银耳莲子粥 1碗',d:'滋阴润肺'},{e:'🍗',n:'白切鸡 100g',d:'去皮低脂'},{e:'🥗',n:'凉拌木耳 150g',d:'补铁'},{e:'🥛',n:'温牛奶 200ml',d:'补钙助眠'}],tip:'晚餐不宜过饱，睡前2小时不进食'},
+    snack:{icon:'🍪',title:'健康加餐',cal:'150-200',items:[{e:'🥜',n:'核桃 2-3颗',d:'DHA'},{e:'🍌',n:'火龙果 半个',d:'膳食纤维'},{e:'🥛',n:'牛奶 1杯',d:'补钙'},{e:'🍪',n:'全麦饼干 2片',d:'缓解饥饿'}],tip:'上午10点、下午3点各加餐一次'} },
+  { breakfast:{icon:'🌅',title:'营养早餐',cal:'400-500',items:[{e:'🥛',n:'豆浆 300ml',d:'植物蛋白'},{e:'🥟',n:'小笼包 3-4个',d:'荤素搭配'},{e:'🥚',n:'茶叶蛋 1个',d:'优质蛋白'},{e:'🍎',n:'苹果 1个',d:'膳食纤维'}],tip:'早餐后记得服用叶酸哦！'},
+    lunch:{icon:'☀️',title:'丰盛午餐',cal:'600-700',items:[{e:'🍚',n:'黑米饭 1碗',d:'花青素'},{e:'🍤',n:'蒜蓉粉丝虾 100g',d:'高蛋白'},{e:'🥬',n:'清炒芥蓝 200g',d:'绿叶蔬菜'},{e:'🍲',n:'萝卜排骨汤 1碗',d:'补钙'}],tip:'避免生冷、辛辣、油腻食物'},
+    dinner:{icon:'🌙',title:'清淡晚餐',cal:'500-600',items:[{e:'🍜',n:'百合粥 1碗',d:'安神助眠'},{e:'🥚',n:'蒸蛋 1碗',d:'易消化'},{e:'🥒',n:'拍黄瓜 150g',d:'清爽'},{e:'🥛',n:'温牛奶 200ml',d:'补钙助眠'}],tip:'晚餐不宜过饱，睡前2小时不进食'},
+    snack:{icon:'🍪',title:'健康加餐',cal:'150-200',items:[{e:'🫐',n:'蓝莓 1小盒',d:'抗氧化'},{e:'🥛',n:'酸奶 1杯',d:'益生菌'},{e:'🍞',n:'全麦吐司 1小片',d:'缓解饥饿'},{e:'🥜',n:'腰果 5-6颗',d:'不饱和脂肪酸'}],tip:'上午10点、下午3点各加餐一次'} },
+  { breakfast:{icon:'🌅',title:'营养早餐',cal:'400-500',items:[{e:'🥣',n:'小米粥 1碗',d:'养胃'},{e:'🥚',n:'水煮蛋 1-2个',d:'优质蛋白'},{e:'🍞',n:'全麦面包 1片',d:'B族维生素'},{e:'🍇',n:'提子 10颗',d:'补铁'}],tip:'早餐后记得服用叶酸哦！'},
+    lunch:{icon:'☀️',title:'丰盛午餐',cal:'600-700',items:[{e:'🍚',n:'燕麦饭 1碗',d:'膳食纤维'},{e:'🐟',n:'清蒸鳕鱼 100g',d:'DHA丰富'},{e:'🥬',n:'清炒荷兰豆 200g',d:'清脆爽口'},{e:'🍲',n:'海带豆腐汤 1碗',d:'补钙补碘'}],tip:'避免生冷、辛辣、油腻食物'},
+    dinner:{icon:'🌙',title:'清淡晚餐',cal:'500-600',items:[{e:'🍜',n:'红豆粥 1碗',d:'补血'},{e:'🍗',n:'蒸鸡胸肉 100g',d:'低脂高蛋白'},{e:'🥗',n:'凉拌菠菜 150g',d:'叶酸丰富'},{e:'🥛',n:'温牛奶 200ml',d:'补钙助眠'}],tip:'晚餐不宜过饱，睡前2小时不进食'},
+    snack:{icon:'🍪',title:'健康加餐',cal:'150-200',items:[{e:'🥜',n:'混合坚果 1小把',d:'不饱和脂肪酸'},{e:'🍌',n:'猕猴桃 1个',d:'维生素C'},{e:'🥛',n:'豆浆 1杯',d:'植物蛋白'},{e:'🍪',n:'苏打饼干 2片',d:'缓解孕吐'}],tip:'上午10点、下午3点各加餐一次'} }
+];
+
+function getTodayRecipeSet() {
+  const today = new Date();
+  const seed = today.getFullYear() * 10000 + (today.getMonth()+1) * 100 + today.getDate();
+  const idx = seed % RECIPE_SETS.length;
+  document.getElementById('recipeDayTag').textContent = '今日推荐第' + (idx+1) + '套';
+  return RECIPE_SETS[idx];
+}
+
+function renderRecipes() {
+  const set = getTodayRecipeSet();
+  const container = document.getElementById('recipeContent');
+  const meals = ['breakfast','lunch','dinner','snack'];
+  const mealNames = {'breakfast':'早餐','lunch':'午餐','dinner':'晚餐','snack':'加餐'};
+  const mealColors = {'breakfast':'amber','lunch':'orange','dinner':'indigo','snack':'pink'};
+  
+  let html = '';
+  meals.forEach((meal, i) => {
+    const data = set[meal];
+    const color = mealColors[meal];
+    const hidden = i === 0 ? '' : 'hidden';
+    html += '<div class="recipe-panel ' + hidden + '" data-meal="' + meal + '">';
+    html += '<div class="bg-white rounded-2xl card-shadow p-4">';
+    html += '<div class="flex items-center mb-3"><span class="w-10 h-10 rounded-xl bg-' + color + '-100 text-' + color + '-600 flex items-center justify-center text-xl mr-3">' + data.icon + '</span>';
+    html += '<div><h4 class="font-bold text-gray-800">' + data.title + '</h4><p class="text-xs text-gray-500">约 ' + data.cal + ' 大卡</p></div></div>';
+    html += '<div class="space-y-2">';
+    data.items.forEach(item => {
+      html += '<div class="flex items-center bg-' + color + '-50 rounded-lg p-2"><span class="text-lg mr-2">' + item.e + '</span>';
+      html += '<div class="flex-1"><p class="text-sm text-gray-700">' + item.n + '</p><p class="text-xs text-gray-400">' + item.d + '</p></div></div>';
+    });
+    html += '</div>';
+    html += '<div class="mt-3 bg-' + color + '-50 rounded-lg p-2 border border-' + color + '-200"><p class="text-xs text-' + color + '-700"><i class="fas fa-lightbulb mr-1"></i>' + data.tip + '</p></div>';
+    html += '</div></div>';
+  });
+  container.innerHTML = html;
+}
+
+// ========== 5. 昨日饮食记录 ==========
+function getDietRecords() {
+  try { return JSON.parse(localStorage.getItem(DIET_KEY)) || {}; }
+  catch(e) { return {}; }
+}
+function saveDietRecords(records) {
+  localStorage.setItem(DIET_KEY, JSON.stringify(records));
+}
+function addYesterdayDiet() {
+  const input = document.getElementById('yesterdayDietInput');
+  const val = input.value.trim();
+  if (!val) { alert('请输入昨日饮食内容'); return; }
+  const records = getDietRecords();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const key = yesterday.toISOString().split('T')[0];
+  records[key] = val;
+  saveDietRecords(records);
+  input.value = '';
+  renderYesterdayDiet();
+}
+function renderYesterdayDiet() {
+  const records = getDietRecords();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const key = yesterday.toISOString().split('T')[0];
+  const container = document.getElementById('yesterdayDietDisplay');
+  if (records[key]) {
+    container.innerHTML = '<div class="bg-amber-50 rounded-lg p-3 border border-amber-200"><p class="text-sm text-gray-700">' + records[key] + '</p></div>';
+  } else {
+    container.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">暂无记录，请在下方添加</p>';
+  }
+}
+
+// ========== 通用工具 ==========
+function scrollTo(id) {
+  if (id === 'top') window.scrollTo({top:0, behavior:'smooth'});
+  else document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+}
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  updateProgress();
+}
+function updateProgress() {
+  const items = document.querySelectorAll('.check-item');
+  const checked = document.querySelectorAll('.check-item.checked');
+  document.getElementById('todoProgress').textContent = checked.length + '/' + items.length + ' 完成';
+}
+function switchNut(phase, btn) {
+  document.querySelectorAll('.nut-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.nut-panel').forEach(p => {
+    p.classList.add('hidden');
+    if (p.dataset.phase === phase) p.classList.remove('hidden');
+  });
+}
+function switchRecipe(meal, btn) {
+  document.querySelectorAll('.recipe-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.recipe-panel').forEach(p => {
+    p.classList.add('hidden');
+    if (p.dataset.meal === meal) p.classList.remove('hidden');
+  });
+}
+function switchDev(week, btn) {
+  document.querySelectorAll('.dev-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.dev-panel').forEach(p => {
+    p.classList.add('hidden');
+    if (parseInt(p.dataset.week) === week) p.classList.remove('hidden');
+  });
+}
+
+// ========== 初始化 ==========
 document.addEventListener('DOMContentLoaded', function() {
-    updateProgress();
-    renderWeight();
+  updateDateInfo();
+  renderReports();
+  renderRecipes();
+  updateProgress();
+  renderWeight();
+  renderYesterdayDiet();
 });
 </script>
 </body>
