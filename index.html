@@ -235,12 +235,14 @@ function setReminderTime(id,v){const r=getReminders(),x=r.find(y=>y.id===id);if(
 function toggleReminder(id){const r=getReminders(),x=r.find(y=>y.id===id);if(x){x.on=!x.on;saveReminders(r);renderReminders()}}
 function renderReminders(){const c=document.getElementById('reminderList');if(!c)return;c.innerHTML=getReminders().map(r=>'<div class="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2"><span class="text-sm text-gray-700 flex-1">'+r.name+'</span><input type="time" value="'+r.time+'" onchange="setReminderTime(\''+r.id+'\',this.value)" class="border-2 border-gray-200 rounded-lg px-2 py-1 text-sm w-24 mr-2 bg-white"><button onclick="toggleReminder(\''+r.id+'\')" class="text-xs px-2.5 py-1 rounded-full whitespace-nowrap '+(r.on?'bg-green-100 text-green-600':'bg-gray-200 text-gray-400')+'">'+(r.on?'已开启':'已关闭')+'</button></div>').join('')}
 function updatePermBtn(){const b=document.getElementById('notifPermBtn');if(!b)return;if(!('Notification' in window)){b.textContent='不支持系统通知';b.className='flex-1 bg-gray-300 text-white py-2 rounded-xl text-xs font-medium'}else{const p=Notification.permission;b.textContent=p==='granted'?'✓ 通知已开启':p==='denied'?'通知被拒绝(请到浏览器设置开启)':'开启系统通知';b.className='flex-1 '+(p==='granted'?'bg-green-500':'bg-pink-500')+' text-white py-2 rounded-xl text-xs font-medium active:scale-95 transition-transform'}}
-function requestNotifPerm(){if(!('Notification' in window)){showToast('不支持系统通知','将使用页面内弹窗 + 震动 + 语音播报');return}Notification.requestPermission().then(p=>{updatePermBtn();if(p==='granted')showToast('通知权限已开启','到点将弹出系统通知');else showToast('未获得通知权限','将使用页面内弹窗 + 震动 + 语音播报')})}
+function requestNotifPerm(){if(!('Notification' in window)){showToast('不支持系统通知','将使用页面内弹窗 + 震动 + 语音播报');return}if(Notification.permission==='denied'){alert('通知权限之前被拒绝过，浏览器不会再次询问，需要手动开启：\n\n1. 浏览器右下角「我的」→ 设置\n2. 找到「网站设置」或「隐私/权限管理」→ 通知\n3. 找到本网站（406773421.github.io）→ 设为允许\n\n也可以清除本网站数据后重新进入页面，再点本按钮并选择「允许」。\n（不同浏览器版本菜单位置略有差异）');return}Notification.requestPermission().then(p=>{updatePermBtn();if(p==='granted')showToast('通知权限已开启','到点将弹出系统通知');else showToast('未获得通知权限','将使用页面内弹窗 + 震动 + 语音播报')})}
 function showToast(title,text){document.getElementById('toastTitle').textContent=title;document.getElementById('toastText').textContent=text;const t=document.getElementById('reminderToast');t.classList.remove('hidden');clearTimeout(t._timer);t._timer=setTimeout(hideToast,20000)}
 function hideToast(){document.getElementById('reminderToast').classList.add('hidden')}
 function fireReminder(r){showToast('⏰ '+r.name,r.text);if('Notification' in window&&Notification.permission==='granted'){try{new Notification('孕期管家 · '+r.name,{body:r.text})}catch(e){}}if(navigator.vibrate){try{navigator.vibrate([400,200,400,200,400])}catch(e){}}try{const u=new SpeechSynthesisUtterance(r.text);u.lang='zh-CN';u.rate=0.9;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
 function testReminder(){fireReminder({name:'测试提醒',text:'这是测试提醒，如果听到语音并感到震动，说明一切正常'})}
 function checkReminders(){const n=new Date(),p=x=>(x<10?'0':'')+x,hm=p(n.getHours())+':'+p(n.getMinutes()),f=getFired(),done=f[localDateStr()]||[];getReminders().forEach(r=>{if(r.on&&r.time===hm&&done.indexOf(r.id)<0){fireReminder(r);markFired(r.id)}})}
+function catchUpReminders(){const n=new Date(),nowMin=n.getHours()*60+n.getMinutes(),f=getFired(),done=f[localDateStr()]||[];getReminders().forEach(r=>{if(!r.on||done.indexOf(r.id)>=0)return;const pt=r.time.split(':'),m=parseInt(pt[0])*60+parseInt(pt[1]);if(m<=nowMin){fireReminder(Object.assign({},r,{name:r.name+'（补提醒）'}));markFired(r.id)}})}
+document.addEventListener('visibilitychange',function(){if(!document.hidden)catchUpReminders()});
 
 function jumpTo(id){if(id==='top'){window.scrollTo({top:0,behavior:'smooth'})}else{const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}}
 function toggleCheck(el){el.classList.toggle('checked');updateProgress()}
@@ -251,7 +253,7 @@ function switchDev(w,btn){document.querySelectorAll('.dev-tab').forEach(t=>t.cla
 
 function updateClock(){const t=new Date(),p=n=>(n<10?'0':'')+n;document.getElementById('todayTime').textContent=p(t.getHours())+':'+p(t.getMinutes())}
 
-document.addEventListener('DOMContentLoaded',function(){updateDateInfo();updateClock();renderReports();renderRecipes();updateProgress();renderWeight();renderYesterdayDiet();renderReminders();updatePermBtn();checkReminders();setInterval(updateClock,1000);setInterval(updateDateInfo,60000);setInterval(checkReminders,20000)});
+document.addEventListener('DOMContentLoaded',function(){updateDateInfo();updateClock();renderReports();renderRecipes();updateProgress();renderWeight();renderYesterdayDiet();renderReminders();updatePermBtn();checkReminders();setTimeout(catchUpReminders,1500);setInterval(updateClock,1000);setInterval(updateDateInfo,60000);setInterval(checkReminders,20000)});
 </script>
 </body>
 </html>
