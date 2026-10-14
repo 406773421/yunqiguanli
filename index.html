@@ -27,6 +27,10 @@ body{background:#f8f9fa}
 .dev-tab{background:#f3f4f6;color:#6b7280}
 .hide-scrollbar::-webkit-scrollbar{display:none}
 .hide-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+.collapse-panel .collapse-body{display:none}
+.collapse-panel.open .collapse-body{display:block}
+.collapse-panel .collapse-arrow{transition:transform .2s ease}
+.collapse-panel.open .collapse-arrow{transform:rotate(90deg)}
 .weight-input:focus,.diet-input:focus{outline:none;border-color:#e91e63}
 .timeline-dot{width:12px;height:12px;border-radius:50%;position:absolute;left:-22px;top:6px}
 .timeline-line{position:absolute;left:-17px;top:18px;bottom:-8px;width:2px}
@@ -59,17 +63,12 @@ body{background:#f8f9fa}
   <div class="glass card-shadow rounded-2xl p-4 border-l-4 border-pink-400">
     <div class="flex justify-between items-start mb-3"><h3 class="font-bold text-gray-800"><i class="fas fa-file-medical-alt text-pink-500 mr-2"></i>检验报告解读</h3><span class="text-xs text-gray-400" id="latestReportDate">--</span></div>
     <div id="reportCompare"></div>
-    <div class="mt-3 border-t border-pink-100 pt-3">
-      <div class="flex justify-between items-center mb-2"><h4 class="text-sm font-bold text-gray-700"><i class="fas fa-history text-pink-400 mr-1"></i>历史检验报告</h4><button onclick="toggleReportForm()" class="text-xs bg-pink-500 text-white px-3 py-1 rounded-full active:scale-95 transition-transform"><i class="fas fa-plus mr-1"></i>添加报告</button></div>
-      <div id="reportForm" class="hidden bg-pink-50 rounded-xl p-3 mb-2 border border-pink-100">
-        <div class="mb-2"><label class="text-xs text-gray-500 block mb-1">检查日期</label><input type="date" id="reportDateInput" class="weight-input w-full border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white transition-all"></div>
-        <div class="flex space-x-2 mb-2"><div class="flex-1"><label class="text-xs text-gray-500 block mb-1">孕酮 (ng/mL)</label><input type="number" id="reportProgInput" step="0.01" placeholder="如 14.03" class="weight-input w-full border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white transition-all"></div><div class="flex-1"><label class="text-xs text-gray-500 block mb-1">HCG (mIU/mL)</label><input type="number" id="reportHcgInput" step="0.01" placeholder="如 850.07" class="weight-input w-full border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white transition-all"></div></div>
-        <div class="mb-2"><label class="text-xs text-gray-500 block mb-1">医生提示（可选）</label><input type="text" id="reportTipInput" placeholder="如：1周后复查HCG翻倍情况" class="diet-input w-full border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white transition-all"></div>
-        <button onclick="addReport()" class="w-full bg-pink-500 text-white py-2 rounded-xl text-sm font-medium active:scale-95 transition-transform"><i class="fas fa-save mr-1"></i>保存报告</button>
+    <div class="collapse-panel mt-3" id="reportTipPanel">
+      <div class="bg-amber-50 rounded-xl border border-amber-200 overflow-hidden">
+        <div class="flex items-center justify-between px-3 py-2 cursor-pointer" onclick="toggleCollapse('reportTipPanel')"><span class="text-xs font-bold text-amber-800"><i class="fas fa-exclamation-triangle mr-1"></i>温馨提示（点击展开解读）</span><i class="fas fa-chevron-right collapse-arrow text-amber-400 text-xs"></i></div>
+        <div class="collapse-body"><p class="text-xs text-amber-800 px-3 pb-3" id="reportTip">--</p></div>
       </div>
-      <div class="space-y-2 max-h-48 overflow-y-auto hide-scrollbar" id="reportHistory"></div>
     </div>
-    <div class="bg-amber-50 rounded-xl p-3 border border-amber-200 mt-3"><p class="text-xs text-amber-800" id="reportTip"><i class="fas fa-exclamation-triangle mr-1"></i><strong>温馨提示：</strong>--</p></div>
   </div>
 </div>
 
@@ -78,7 +77,12 @@ body{background:#f8f9fa}
   <div class="glass card-shadow rounded-2xl p-4 border-l-4 border-teal-400">
     <div class="flex justify-between items-start mb-3"><h3 class="font-bold text-gray-800"><i class="fas fa-baby text-teal-500 mr-2"></i>B超报告解读</h3><span class="text-xs text-gray-400" id="latestUsDate">--</span></div>
     <div id="usContent"></div>
-    <div class="bg-teal-50 rounded-xl p-3 border border-teal-200 mt-3"><p class="text-xs text-teal-800" id="usTip">--</p></div>
+    <div class="collapse-panel mt-3" id="usTipPanel">
+      <div class="bg-teal-50 rounded-xl border border-teal-200 overflow-hidden">
+        <div class="flex items-center justify-between px-3 py-2 cursor-pointer" onclick="toggleCollapse('usTipPanel')"><span class="text-xs font-bold text-teal-800"><i class="fas fa-heart mr-1"></i>解读（点击展开）</span><i class="fas fa-chevron-right collapse-arrow text-teal-400 text-xs"></i></div>
+        <div class="collapse-body"><p class="text-xs text-teal-800 px-3 pb-3" id="usTip">--</p></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -87,7 +91,22 @@ body{background:#f8f9fa}
   <div class="glass card-shadow rounded-2xl p-4 border-l-4 border-indigo-400">
     <div class="flex justify-between items-start mb-3"><h3 class="font-bold text-gray-800"><i class="fas fa-notes-medical text-indigo-500 mr-2"></i>甲状腺功能</h3><span class="text-xs text-gray-400" id="latestThyDate">--</span></div>
     <div id="thyContent"></div>
-    <div class="bg-indigo-50 rounded-xl p-3 border border-indigo-200 mt-3"><p class="text-xs text-indigo-800" id="thyTip">--</p></div>
+    <div class="mt-3 border-t border-indigo-100 pt-3">
+      <div class="flex justify-between items-center mb-2"><h4 class="text-sm font-bold text-gray-700"><i class="fas fa-history text-indigo-400 mr-1"></i>历史检验报告</h4><button onclick="toggleReportForm()" class="text-xs bg-indigo-500 text-white px-3 py-1 rounded-full active:scale-95 transition-transform"><i class="fas fa-plus mr-1"></i>添加报告</button></div>
+      <div id="reportForm" class="hidden bg-indigo-50 rounded-xl p-3 mb-2 border border-indigo-100">
+        <div class="mb-2"><label class="text-xs text-gray-500 block mb-1">检查日期</label><input type="date" id="reportDateInput" class="weight-input w-full border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white transition-all"></div>
+        <div class="flex space-x-2 mb-2"><div class="flex-1"><label class="text-xs text-gray-500 block mb-1">孕酮 (ng/mL)</label><input type="number" id="reportProgInput" step="0.01" placeholder="如 14.03" class="weight-input w-full border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white transition-all"></div><div class="flex-1"><label class="text-xs text-gray-500 block mb-1">HCG (mIU/mL)</label><input type="number" id="reportHcgInput" step="0.01" placeholder="如 850.07" class="weight-input w-full border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white transition-all"></div></div>
+        <div class="mb-2"><label class="text-xs text-gray-500 block mb-1">医生提示（可选）</label><input type="text" id="reportTipInput" placeholder="如：1周后复查HCG翻倍情况" class="diet-input w-full border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white transition-all"></div>
+        <button onclick="addReport()" class="w-full bg-indigo-500 text-white py-2 rounded-xl text-sm font-medium active:scale-95 transition-transform"><i class="fas fa-save mr-1"></i>保存报告</button>
+      </div>
+      <div class="space-y-2 max-h-48 overflow-y-auto hide-scrollbar" id="reportHistory"></div>
+    </div>
+    <div class="collapse-panel mt-3" id="thyTipPanel">
+      <div class="bg-indigo-50 rounded-xl border border-indigo-200 overflow-hidden">
+        <div class="flex items-center justify-between px-3 py-2 cursor-pointer" onclick="toggleCollapse('thyTipPanel')"><span class="text-xs font-bold text-indigo-800"><i class="fas fa-check-circle mr-1"></i>解读（点击展开）</span><i class="fas fa-chevron-right collapse-arrow text-indigo-400 text-xs"></i></div>
+        <div class="collapse-body"><p class="text-xs text-indigo-800 px-3 pb-3" id="thyTip">--</p></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -124,7 +143,12 @@ body{background:#f8f9fa}
         <div class="flex items-center bg-gray-50 rounded-lg px-3 py-2"><i class="fas fa-check-circle text-green-500 mr-2 text-sm"></i><div class="flex-1"><p class="text-sm font-medium text-gray-700">巨细胞病毒 IgG 119 阳性，IgM 阴性</p><p class="text-xs text-gray-400">既往感染已产生抗体，无近期感染</p></div><span class="text-xs text-green-600 font-bold">有抗体</span></div>
       </div></div>
     </div>
-    <div class="bg-violet-50 rounded-xl p-3 border border-violet-200 mt-3"><p class="text-xs text-violet-800"><i class="fas fa-check-circle mr-1"></i><strong>解读：</strong>建档检查整体很顺利：血常规无贫血、肝肾功能正常、血糖达标、凝血正常、铁蛋白和维生素D储备都充足。唯一需要复查的是<strong>尿常规白细胞偏高（3+）</strong>——亚硝酸盐阴性、镜检未见细菌，有可能是留样时污染（未取中段尿）或轻微尿路炎症，建议下次产检复查尿常规：留尿前先清洁外阴、弃去前段尿留中段尿；平时多喝水、不憋尿、注意外阴清洁。另外弓形虫无抗体，孕期要避免接触猫砂、不吃生肉生鱼片、蔬果洗净。白蛋白略低属孕期常见，每天保证蛋、奶、鱼虾等优质蛋白即可。</p></div>
+    <div class="collapse-panel mt-3" id="recordTipPanel">
+      <div class="bg-violet-50 rounded-xl border border-violet-200 overflow-hidden">
+        <div class="flex items-center justify-between px-3 py-2 cursor-pointer" onclick="toggleCollapse('recordTipPanel')"><span class="text-xs font-bold text-violet-800"><i class="fas fa-check-circle mr-1"></i>解读（点击展开）</span><i class="fas fa-chevron-right collapse-arrow text-violet-400 text-xs"></i></div>
+        <div class="collapse-body"><p class="text-xs text-violet-800 px-3 pb-3">建档检查整体很顺利：血常规无贫血、肝肾功能正常、血糖达标、凝血正常、铁蛋白和维生素D储备都充足。唯一需要复查的是<strong>尿常规白细胞偏高（3+）</strong>——亚硝酸盐阴性、镜检未见细菌，有可能是留样时污染（未取中段尿）或轻微尿路炎症，建议下次产检复查尿常规：留尿前先清洁外阴、弃去前段尿留中段尿；平时多喝水、不憋尿、注意外阴清洁。另外弓形虫无抗体，孕期要避免接触猫砂、不吃生肉生鱼片、蔬果洗净。白蛋白略低属孕期常见，每天保证蛋、奶、鱼虾等优质蛋白即可。</p></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -161,7 +185,7 @@ body{background:#f8f9fa}
     <div class="relative pl-6 space-y-4">
       <div class="relative"><div class="timeline-dot bg-pink-500 border-2 border-white"></div><div class="timeline-line bg-pink-200"></div><div class="bg-pink-50 rounded-xl p-3 border border-pink-100"><div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-800">✅ 确认怀孕（已做）</span><span class="text-xs text-gray-500">孕4周</span></div><p class="text-xs text-gray-600 mt-1">抽血查HCG、孕酮 — 2026年8月15日</p></div></div>
       <div class="relative"><div class="timeline-dot bg-pink-500 border-2 border-white"></div><div class="timeline-line bg-pink-200"></div><div class="bg-pink-50 rounded-xl p-3 border border-pink-100"><div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-800">✅ 第一次B超（已做）</span><span class="text-xs text-gray-500">孕5周+6</span></div><p class="text-xs text-gray-600 mt-1">确认<strong>宫内早孕</strong>，可见胎心搏动、胎芽、卵黄囊 — 2026年8月31日</p></div></div>
-      <div class="relative"><div class="timeline-dot bg-pink-500 border-2 border-white"></div><div class="timeline-line bg-pink-200"></div><div class="bg-pink-50 rounded-xl p-3 border border-pink-100"><div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-800">✅ NT检查 + 建档（已做）</span><span class="text-xs text-gray-500">孕12周+2</span></div><p class="text-xs text-gray-600 mt-1">NT 1.75mm 正常（<2.5mm），鼻骨可见，静脉导管a波正常，<strong>染色体异常风险评估顺利通过</strong>；建档血检已完成 — 2026年10月14日（建档抽血10月11日）</p></div></div>
+      <div class="relative"><div class="timeline-dot bg-pink-500 border-2 border-white"></div><div class="timeline-line bg-pink-200"></div><div class="bg-pink-50 rounded-xl p-3 border border-pink-100"><div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-800">✅ NT检查 + 建档（已做）</span><span class="text-xs text-gray-500">孕12周2天</span></div><p class="text-xs text-gray-600 mt-1">NT 1.75mm 正常（<2.5mm），鼻骨可见，静脉导管a波正常，<strong>染色体异常风险评估顺利通过</strong>；建档血检已完成 — 2026年10月14日（建档抽血10月11日）</p></div></div>
       <div class="relative"><div class="timeline-dot bg-white border-2 border-pink-500 animate-pulse"></div><div class="timeline-line bg-gray-200"></div><div class="bg-white rounded-xl p-3 border-2 border-pink-300"><div class="flex justify-between items-center"><span class="font-bold text-sm text-pink-700">📅 唐氏筛查 / 无创DNA（即将）</span><span class="text-xs bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full">孕15-20周</span></div><p class="text-xs text-gray-600 mt-1">排查染色体异常风险</p><p class="text-xs text-amber-600 mt-1"><i class="fas fa-clock mr-1"></i>2026年11月3日 — 12月8日</p><div class="mt-2 bg-pink-50 rounded-lg p-2 space-y-1"><p class="text-xs text-gray-600"><i class="fas fa-exclamation-circle text-pink-500 mr-1"></i><strong>注意事项：</strong>普通唐筛建议空腹或清淡饮食（以医院要求为准）；无创DNA无需空腹，准确率更高但费用较高；唐筛高风险或高龄需进一步做羊水穿刺</p><p class="text-xs text-gray-600"><i class="fas fa-briefcase text-pink-500 mr-1"></i><strong>需准备：</strong>产检档案（母子健康手册）、NT检查报告</p></div></div></div>
       <div class="relative"><div class="timeline-dot bg-gray-200 border-2 border-white"></div><div class="timeline-line bg-gray-200"></div><div class="bg-gray-50 rounded-xl p-3"><div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-700">四维彩超（大排畸）</span><span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕22-26周</span></div><p class="text-xs text-gray-500 mt-1">全面检查胎儿器官发育，可看到宝宝模样</p><p class="text-xs text-gray-400 mt-0.5">2026年12月22日 — 2027年1月19日</p><div class="mt-2 bg-white rounded-lg p-2 border border-gray-100 space-y-1"><p class="text-xs text-gray-600"><i class="fas fa-exclamation-circle text-gray-400 mr-1"></i><strong>注意事项：</strong>号源非常抢手，建议提前1个月预约；不需空腹也不用憋尿；检查前半小时吃点甜食、走动一下让宝宝更活跃；穿上下分身的宽松衣服；全程约30-60分钟，宝宝不配合可能要反复几次，预留充足时间</p><p class="text-xs text-gray-600"><i class="fas fa-briefcase text-gray-400 mr-1"></i><strong>需准备：</strong>巧克力或甜零食、水、产检档案</p></div></div></div>
       <div class="relative"><div class="timeline-dot bg-gray-200 border-2 border-white"></div><div class="timeline-line bg-gray-200"></div><div class="bg-gray-50 rounded-xl p-3"><div class="flex justify-between items-center"><span class="font-bold text-sm text-gray-700">糖耐量测试（OGTT）</span><span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">孕24-28周</span></div><p class="text-xs text-gray-500 mt-1">筛查妊娠糖尿病，需空腹</p><p class="text-xs text-gray-400 mt-0.5">2027年1月5日 — 2月2日</p><div class="mt-2 bg-white rounded-lg p-2 border border-gray-100 space-y-1"><p class="text-xs text-gray-600"><i class="fas fa-exclamation-circle text-gray-400 mr-1"></i><strong>注意事项：</strong>必须空腹8-12小时（前一晚20点后禁食，可少量喝水）；糖水5分钟内小口喝完，喝太快容易吐；服糖后不能吃任何东西、尽量静坐少走动；共抽3次血（空腹、服糖后1小时、2小时），耗时一上午</p><p class="text-xs text-gray-600"><i class="fas fa-briefcase text-gray-400 mr-1"></i><strong>需准备：</strong>产检档案、检查结束后补充的零食、水杯；建议家属陪同（空腹+糖水可能头晕）</p></div></div></div>
@@ -256,7 +280,7 @@ function clearWeight(){if(!confirm('确定要清空所有体重记录吗？'))re
 function renderWeight(){const r=getWeightRecords(),p=getPreWeight();document.getElementById('preWeight').textContent=p?p.toFixed(1):'--';if(!r.length){document.getElementById('weightList').innerHTML='<p class="text-xs text-gray-400 text-center py-2">暂无记录，请添加今日体重</p>';document.getElementById('curWeight').textContent='--';document.getElementById('gainWeight').textContent='--';return}const l=r[r.length-1];document.getElementById('curWeight').textContent=l.weight.toFixed(1);if(p){const g=l.weight-p;document.getElementById('gainWeight').textContent=(g>=0?'+':'')+g.toFixed(1)+'kg';document.getElementById('gainWeight').className='text-lg font-bold '+(g>2?'text-amber-600':'text-green-600')}else document.getElementById('gainWeight').textContent='--';document.getElementById('weightList').innerHTML=r.slice().reverse().map(x=>{const d=new Date(x.date),ds=(d.getMonth()+1)+'月'+d.getDate()+'日';let s='';if(p){const diff=x.weight-p;s='<span class="text-xs '+(diff>2?'text-amber-500':'text-green-500')+'">'+(diff>=0?'+':'')+diff.toFixed(1)+'kg</span>'}return'<div class="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2"><span class="text-xs text-gray-600">'+ds+'</span><div class="flex items-center gap-2">'+s+'<span class="text-sm font-bold text-gray-800">'+x.weight.toFixed(1)+'kg</span></div></div>'}).join('')}
 
 const US_KEY='pregnancy_ultrasounds';
-const DEFAULT_ULTRASOUNDS=[{date:'2026-08-31',title:'第一次B超（孕5周+6）',conclusion:'宫内早孕',findings:[{t:'妊娠囊',v:'2.0×0.8×1.9cm，形态规则，可见"双环征"',ok:true},{t:'胎心搏动',v:'可见',ok:true},{t:'胎芽',v:'可见点状胎芽回声',ok:true},{t:'卵黄囊',v:'可见',ok:true},{t:'宫腔积液',v:'宽约0.2cm液性暗区（少量）',ok:false},{t:'双侧卵巢及附件',v:'大小、形态、结构、血流未见异常',ok:true},{t:'盆腔',v:'未见游动性暗区',ok:true}],tip:'恭喜！已确认宫内早孕并可见胎心搏动，宫外孕风险基本排除。宫腔少量积液在孕早期较常见，多数会自行吸收，注意多休息、避免劳累和剧烈运动，如有腹痛或出血及时就医。医生提醒：孕11周-13周6天（10月6日-10月26日）做NT检查，筛查早期畸形及染色体异常。'},{date:'2026-09-14',title:'第二次B超（孕7周+6）',crl:'1.4cm',conclusion:'宫内早孕',findings:[{t:'妊娠囊',v:'3.2×2.0×3.7cm，形态规则，可见"双环征"，较上次明显增大',ok:true},{t:'胎心搏动',v:'可见',ok:true},{t:'胎芽',v:'长约1.4cm（上次为点状胎芽，已明显长大）',ok:true},{t:'卵黄囊',v:'直径约0.4cm，正常',ok:true},{t:'宫腔积液',v:'厚约0.3cm分离暗区（较上次0.2cm略增多）',ok:false},{t:'双侧附件区',v:'未见明显异常回声',ok:true},{t:'盆腔',v:'未见游动性暗区',ok:true}],tip:'宝宝长得很好！两周时间胎芽从点状长到1.4cm，胎心持续可见，妊娠囊明显增大。宫腔积液0.3cm较上次略增多，仍属少量，继续注意休息、避免劳累和剧烈运动，如有腹痛或出血及时就医，下次产检时请医生关注积液变化。NT检查（10月6日-10月26日）记得提前预约。'},{date:'2026-09-28',title:'第三次B超（孕9周+6）',crl:'3.3cm',conclusion:'宫内早孕',findings:[{t:'妊娠囊',v:'5.4×3.0×5.3cm，形态规则，可见"双环征"，持续增大',ok:true},{t:'胎心搏动',v:'可见（含M型超声心动图记录）',ok:true},{t:'胎芽',v:'长约3.3cm（两周前1.4cm，增长良好）',ok:true},{t:'卵黄囊',v:'可见',ok:true},{t:'宫腔积液',v:'报告提示仍有子宫腔积液（描述中未标明具体厚度）',ok:false},{t:'双侧附件区',v:'未见明显异常回声',ok:true},{t:'盆腔',v:'未见游动性暗区',ok:true}],tip:'宝宝长势喜人！胎芽两周从1.4cm长到3.3cm，胎心持续可见。宫腔积液仍存在，继续注意休息、避免劳累，NT检查时请医生复查积液情况。目前孕9周+6，NT检查窗口为10月6日-10月26日（孕11周-13周6天），请提前预约！'},{date:'2026-10-14',title:'NT检查（孕12周+2）',crl:'5.6cm',conclusion:'宫内单活胎',findings:[{t:'NT 颈部透明层',v:'1.75mm（正常，一般<2.5mm）',ok:true},{t:'头臀长 CRL',v:'56.29mm，符合孕12周+2（较9-28的3.3cm明显长大）',ok:true},{t:'鼻骨',v:'可见',ok:true},{t:'胎心率',v:'正常范围，心律整齐',ok:true},{t:'静脉导管',v:'a波未见缺失或反向',ok:true},{t:'胎盘',v:'前壁，厚约1.50cm，成熟度0级',ok:true},{t:'羊水',v:'透声好，最大垂直深度3.0cm',ok:true},{t:'宫腔积液',v:'本次报告未再提及，提示已吸收',ok:true}],tip:'NT检查顺利通过！NT值1.75mm远低于2.5mm的临界值，鼻骨可见、静脉导管a波正常，早期染色体异常风险评估结果很好。之前的宫腔积液本次未再提及，提示已吸收。医生建议：孕20-24周做系统产前筛查（四维彩超）及胎儿超声心动图专项检查，记得提前预约四维（建议提前1个月）。下一项产检：唐筛/无创DNA（11月3日起，孕15-20周）。'}];
+const DEFAULT_ULTRASOUNDS=[{date:'2026-08-31',title:'第一次B超（孕5周+6）',conclusion:'宫内早孕',findings:[{t:'妊娠囊',v:'2.0×0.8×1.9cm，形态规则，可见"双环征"',ok:true},{t:'胎心搏动',v:'可见',ok:true},{t:'胎芽',v:'可见点状胎芽回声',ok:true},{t:'卵黄囊',v:'可见',ok:true},{t:'宫腔积液',v:'宽约0.2cm液性暗区（少量）',ok:false},{t:'双侧卵巢及附件',v:'大小、形态、结构、血流未见异常',ok:true},{t:'盆腔',v:'未见游动性暗区',ok:true}],tip:'恭喜！已确认宫内早孕并可见胎心搏动，宫外孕风险基本排除。宫腔少量积液在孕早期较常见，多数会自行吸收，注意多休息、避免劳累和剧烈运动，如有腹痛或出血及时就医。医生提醒：孕11周-13周6天（10月6日-10月26日）做NT检查，筛查早期畸形及染色体异常。'},{date:'2026-09-14',title:'第二次B超（孕7周+6）',crl:'1.4cm',conclusion:'宫内早孕',findings:[{t:'妊娠囊',v:'3.2×2.0×3.7cm，形态规则，可见"双环征"，较上次明显增大',ok:true},{t:'胎心搏动',v:'可见',ok:true},{t:'胎芽',v:'长约1.4cm（上次为点状胎芽，已明显长大）',ok:true},{t:'卵黄囊',v:'直径约0.4cm，正常',ok:true},{t:'宫腔积液',v:'厚约0.3cm分离暗区（较上次0.2cm略增多）',ok:false},{t:'双侧附件区',v:'未见明显异常回声',ok:true},{t:'盆腔',v:'未见游动性暗区',ok:true}],tip:'宝宝长得很好！两周时间胎芽从点状长到1.4cm，胎心持续可见，妊娠囊明显增大。宫腔积液0.3cm较上次略增多，仍属少量，继续注意休息、避免劳累和剧烈运动，如有腹痛或出血及时就医，下次产检时请医生关注积液变化。NT检查（10月6日-10月26日）记得提前预约。'},{date:'2026-09-28',title:'第三次B超（孕9周+6）',crl:'3.3cm',conclusion:'宫内早孕',findings:[{t:'妊娠囊',v:'5.4×3.0×5.3cm，形态规则，可见"双环征"，持续增大',ok:true},{t:'胎心搏动',v:'可见（含M型超声心动图记录）',ok:true},{t:'胎芽',v:'长约3.3cm（两周前1.4cm，增长良好）',ok:true},{t:'卵黄囊',v:'可见',ok:true},{t:'宫腔积液',v:'报告提示仍有子宫腔积液（描述中未标明具体厚度）',ok:false},{t:'双侧附件区',v:'未见明显异常回声',ok:true},{t:'盆腔',v:'未见游动性暗区',ok:true}],tip:'宝宝长势喜人！胎芽两周从1.4cm长到3.3cm，胎心持续可见。宫腔积液仍存在，继续注意休息、避免劳累，NT检查时请医生复查积液情况。目前孕9周+6，NT检查窗口为10月6日-10月26日（孕11周-13周6天），请提前预约！'},{date:'2026-10-14',title:'NT检查（孕12周2天）',crl:'5.6cm',conclusion:'宫内单活胎',findings:[{t:'NT 颈部透明层',v:'1.75mm（正常，一般<2.5mm）',ok:true},{t:'头臀长 CRL',v:'56.29mm，符合孕12周2天（较9-28的3.3cm明显长大）',ok:true},{t:'鼻骨',v:'可见',ok:true},{t:'胎心率',v:'正常范围，心律整齐',ok:true},{t:'静脉导管',v:'a波未见缺失或反向',ok:true},{t:'胎盘',v:'前壁，厚约1.50cm，成熟度0级',ok:true},{t:'羊水',v:'透声好，最大垂直深度3.0cm',ok:true},{t:'宫腔积液',v:'本次报告未再提及，提示已吸收',ok:true}],tip:'NT检查顺利通过！NT值1.75mm远低于2.5mm的临界值，鼻骨可见、静脉导管a波正常，早期染色体异常风险评估结果很好。之前的宫腔积液本次未再提及，提示已吸收。医生建议：孕20-24周做系统产前筛查（四维彩超）及胎儿超声心动图专项检查，记得提前预约四维（建议提前1个月）。下一项产检：唐筛/无创DNA（11月3日起，孕15-20周）。'}];
 function getUltrasounds(){try{return JSON.parse(localStorage.getItem(US_KEY))||[]}catch(e){return[]}}
 function saveUltrasounds(r){localStorage.setItem(US_KEY,JSON.stringify(r))}
 function initUltrasounds(){let r=getUltrasounds().filter(x=>!DEFAULT_ULTRASOUNDS.some(d=>d.date===x.date));DEFAULT_ULTRASOUNDS.forEach(d=>r.push(Object.assign({},d)));r.sort((a,b)=>a.date.localeCompare(b.date));saveUltrasounds(r);return r}
@@ -294,6 +318,7 @@ document.addEventListener('visibilitychange',function(){if(!document.hidden)catc
 
 function jumpTo(id){if(id==='top'){window.scrollTo({top:0,behavior:'smooth'})}else{const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}}
 function toggleCheck(el){el.classList.toggle('checked');updateProgress()}
+function toggleCollapse(id){const p=document.getElementById(id);if(p)p.classList.toggle('open')}
 function updateProgress(){const i=document.querySelectorAll('.check-item'),c=document.querySelectorAll('.check-item.checked');document.getElementById('todoProgress').textContent=c.length+'/'+i.length+' 完成'}
 function switchNut(p,btn){document.querySelectorAll('.nut-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.nut-panel').forEach(x=>{x.classList.add('hidden');if(x.dataset.phase===p)x.classList.remove('hidden')})}
 function switchDev(w,btn){document.querySelectorAll('.dev-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.dev-panel').forEach(x=>{x.classList.add('hidden');if(parseInt(x.dataset.week)===w)x.classList.remove('hidden')})}
